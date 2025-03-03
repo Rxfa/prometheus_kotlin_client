@@ -1,0 +1,87 @@
+\documentclass[a4paper,twoside,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{url}
+
+% pdflatex
+
+% redefinição das margens das páginas
+\setlength{\textheight}{24.00cm}
+\setlength{\textwidth}{15.50cm}
+\setlength{\topmargin}{0.35cm}
+\setlength{\headheight}{0cm}
+\setlength{\headsep}{0cm}
+\setlength{\oddsidemargin}{0.25cm}
+\setlength{\evensidemargin}{0.25cm}
+
+\title{Prometheus Kotlin Client Library}
+
+\author{
+\begin{tabular}{c}
+             Mário Rijo, n.º XXXXX, e-mail: xxxxxx@alunos.isel.pt, tel.: xxxxxxxxx\\
+             Rafael Nicolau, n.º 50546, e-mail: xxxxxx@alunos.isel.pt, tel.: xxxxxxxxx\\
+\end{tabular}}
+
+\date{
+\begin{tabular}{ll}
+  {Supervisor:} & Álvaro de Campos, e-mail: ac@isel.pt \\
+\end{tabular}\\
+\vspace{5mm}
+March 2025}
+
+\begin{document}
+
+\begin{figure}
+\begin{center}
+\resizebox{80mm}{!}{\includegraphics{logoISEL.png}}
+\end{center}
+\end{figure}
+
+\maketitle
+
+\section{Introduction}
+In this project proposal there are some key contextual topics that are important to clarify.
+The following paragraphs will explain the main context in detail.
+
+\subsection{Observability}
+Observability \cite{whatisobservability:grafana} is defined as the ability of measuring a system's current state based on the data it generates, in the form of logs, metrics, and traces. 
+
+These telemetry types are known as the three pillars of observability \cite{whatisobservability:ibm} and are essential to understand the system's behavior and performance, enabling organizations to identify and solve issues quickly.
+
+\subsubsection{Metrics}
+A Metric is a time-stampted numeric measurement that represents the system's state at a given time (i.e., CPU usage, memory usage, etc.).
+These can provide information regarding how often a failure occurs, but not the reason why it happens.
+
+\subsubsection{Logs}
+Logs are time-stamped records of events that occur in a system (i.e., errors, warnings, etc.). 
+They are useful to understand the system's behavior and to identify the root cause of a failure.
+
+\subsubsection{Traces}
+A Trace provides a detailed view of a request's journey through the multiple components of a system.
+This type of telemetry is useful to understand the system's performance and to identify bottlenecks.
+
+\subsection{Data collection}
+To set up an observability system, it is necessary to collect data from various components of the system. Since modern systems often consist of multiple services, a centralized approach to data collection is essential.
+
+
+One of the most effective ways to collect observability data is code instrumentation—embedding telemetry collection directly within the application code. 
+This method allows developers to expose metrics, logs, and traces at key execution points, providing fine-grained visibility into system behavior.
+
+\subsection{Prometheus}
+Prometheus \cite{prometheus:prometheus} is an open-source metrics-focused monitoring and alerting toolkit originally built at SoundCloud in 2012. Prometheus has, since then, become one of the most popular monitoring tools, seeing major adoption across the industry and the open-source community.
+It is now a standalone open-source project maintained independently of any company, joining the Cloud Native Computing Foundation in 2016 as the second hosted project after Kubernetes.
+
+Prometheus is a pull-based monitoring system that scrapes metrics from instrumented jobs, either directly or via an intermediary push gateway for short-lived jobs.
+
+
+\section{Análise}
+Nesta secção...
+
+\section{Planeamento}
+Agora o texto sobre o planeamento
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}
