@@ -19,8 +19,8 @@
 
 \author{
 \begin{tabular}{c}
-             Mário Rijo, n.º XXXXX, e-mail: xxxxxx@alunos.isel.pt, tel.: xxxxxxxxx\\
-             Rafael Nicolau, n.º 50546, e-mail: xxxxxx@alunos.isel.pt, tel.: xxxxxxxxx\\
+             Mário Rijo, n.º 50561, e-mail: A50561@alunos.isel.pt, tel.: 924422578\\
+             Rafael Nicolau, n.º 50546, e-mail: A50561@alunos.isel.pt, tel.: 924422578\\
 \end{tabular}}
 
 \date{
@@ -74,6 +74,90 @@ It is now a standalone open-source project maintained independently of any compa
 
 Prometheus is a pull-based monitoring system that scrapes metrics from instrumented jobs, either directly or via an intermediary push gateway for short-lived jobs.
 
+\subsection{Exporting a Library}
+In the context of software development, exporting a library refers to making its functionality available for use by other applications or services. This is typically achieved by defining and exposing well-structured interfaces or APIs that allow external components to interact with the library's internal logic.
+
+When dealing with observability tools like Prometheus, exporting plays a crucial role in making collected metrics accessible. A library designed for observability should provide mechanisms to expose data in a structured format that monitoring systems can scrape and analyze. In the case of Prometheus, this usually means:
+\begin{itemize}
+    \item Providing an HTTP endpoint where metrics can be queried.
+    \item Formatting data according to the Prometheus exposition format.
+    \item Supporting different metric types such as counters, gauges, and histograms.
+\end{itemize}
+
+For a Kotlin-based Prometheus client library, the export process generally involves defining metric types, registering them within the application, and exposing them through an endpoint that Prometheus can scrape at regular intervals. This allows real-time collection and monitoring of performance data, aiding in debugging and system optimization.
+
+\subsection{Prometheus Metric Types}
+Prometheus provides four fundamental types of metrics to enable effective system monitoring. Each metric type serves a distinct purpose in capturing different aspects of system performance and behavior.
+
+\subsubsection{Counter}
+A Counter is a cumulative metric that **only increases** or resets to zero upon system restart. It is typically used to track the occurrence of specific events, such as:
+\begin{itemize}
+    \item The number of HTTP requests received.
+    \item The total number of errors encountered.
+    \item The number of jobs completed successfully.
+\end{itemize}
+Since a counter cannot decrease, it is ideal for measuring events that accumulate over time.
+
+\subsubsection{Gauge}
+A Gauge represents a metric that can **increase or decrease** dynamically. It is useful for capturing system states that fluctuate over time, such as:
+\begin{itemize}
+    \item Current memory usage.
+    \item Number of active database connections.
+    \item CPU temperature.
+\end{itemize}
+Unlike counters, gauges provide real-time values that can go up or down, making them ideal for monitoring resource utilization.
+
+\subsubsection{Histogram}
+A Histogram measures the **distribution of values** over predefined **buckets** and provides useful statistical data such as sum and count. It is particularly useful for analyzing:
+\begin{itemize}
+    \item Request latency (e.g., response times grouped into time intervals).
+    \item File sizes processed by a system.
+    \item Transaction durations.
+\end{itemize}
+By aggregating values into buckets, histograms allow detailed performance analysis and can be used to determine percentiles.
+
+\subsubsection{Summary}
+A Summary is similar to a histogram but **pre-computes quantiles** (such as median or 95th percentile) rather than relying on bucketed distributions. It is useful when you need:
+\begin{itemize}
+    \item Direct percentile calculations (e.g., median API response time).
+    \item Aggregated metrics that avoid manual bucket configuration.
+    \item High-precision monitoring of latency and performance.
+\end{itemize}
+Summaries provide quantiles at the cost of requiring more storage and computation compared to histograms.
+
+Each of these metric types plays a vital role in observability, allowing Prometheus to monitor system performance efficiently and help engineers diagnose issues based on real-time and historical data.
+
+\subsection{Kotlin Multiplatform and Its Role in Observability}
+Kotlin Multiplatform (KMP)\cite{kotlinmultiplatform:jetbrains} is a powerful feature of the Kotlin programming language that enables code sharing across multiple platforms while allowing platform-specific implementations where needed. This approach significantly reduces duplication and improves maintainability, especially in large-scale applications.
+
+\subsubsection{Overview of Kotlin Multiplatform}
+KMP allows developers to write shared business logic that can run on different platforms, including:
+\begin{itemize}
+    \item JVM (backend applications, Android).
+    \item JavaScript (frontend web applications).
+    \item Native (iOS, macOS, Linux, Windows).
+\end{itemize}
+By defining **common code** and implementing **platform-specific features** when necessary, KMP provides a flexible and efficient way to build cross-platform applications.
+
+\subsubsection{Using Kotlin Multiplatform for Observability}
+In the context of observability and Prometheus, Kotlin Multiplatform can be leveraged to create a monitoring library that works across multiple environments. A KMP-based Prometheus client library could:
+\begin{itemize}
+    \item **Provide a unified API** for defining and exporting metrics regardless of the target platform.
+    \item **Allow backend services (JVM) to expose Prometheus metrics**, while mobile (Android/iOS) and frontend (JavaScript) applications could send observability data to a centralized system.
+    \item **Reduce duplication** by implementing core metric collection logic in shared Kotlin code, while platform-specific modules handle transport (e.g., exposing an HTTP endpoint on JVM, integrating with local logging on iOS).
+    \item **Support embedded observability** for microservices, mobile applications, and web apps by adapting Prometheus-compatible telemetry to different environments.
+\end{itemize}
+
+\subsubsection{Example Use Case}
+Consider an application that includes:
+\begin{itemize}
+    \item A **Kotlin/JVM backend** running a web server that exposes Prometheus metrics over an HTTP endpoint.
+    \item A **Kotlin/Android client** that collects internal app metrics and forwards them to a centralized monitoring service.
+    \item A **Kotlin/JavaScript frontend** that logs user interactions and performance data for analysis.
+\end{itemize}
+With Kotlin Multiplatform, a single Prometheus client library could serve all these components while keeping platform-specific optimizations.
+
+Kotlin Multiplatform's flexibility and cross-platform capabilities make it an excellent choice for implementing observability tools, ensuring consistent monitoring across diverse environments.
 
 \section{Análise}
 Nesta secção...
