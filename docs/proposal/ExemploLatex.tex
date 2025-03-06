@@ -77,13 +77,27 @@ When dealing with observability tools like Prometheus, exporting plays a crucial
 
 For a Kotlin-based Prometheus client library, the export process generally involves defining metric types, registering them within the application, and exposing them through an endpoint that Prometheus can scrape at regular intervals. This allows real-time collection and monitoring of performance data, aiding in debugging and system optimization.
 
-\section{The Project}
+\section{Problem Statement}
+Existing Prometheus client libraries primarily cater to Java applications, with limited optimizations for Kotlin’s unique features. Many of these libraries require extensive boilerplate code and do not fully utilize Kotlin’s capabilities, such as coroutines for efficient asynchronous operations.
 
+Additionally, while frameworks like Ktor and Http4k are widely used in Kotlin-based backend applications, there is no dedicated Prometheus client that seamlessly integrates with them. Developers often need to write custom wrappers or rely on Java-based solutions that may not align well with Kotlin’s idiomatic design, leading to inefficiencies and increased maintenance effort.
+
+\section{Functional Requirements}
+This project aims to address these gaps by providing a Kotlin-native Prometheus client library that:
+\begin{itemize}
+    \item Leverages Kotlin’s coroutines for efficient metric collection.
+    \item Offers seamless integration with Kotlin frameworks such as Ktor and Http4k.
+    \item Reduces boilerplate code and improves developer experience.
+    \item Ensures compatibility with Prometheus while optimizing for Kotlin’s concurrency model.
+    \item Provides better performance and efficiency than its Java counterpart.
+\end{itemize}
+
+\section{The Project}
 The goal of this project is to develop a Prometheus client library tailored for Kotlin, leveraging Kotlin's unique features such as coroutines. This library will provide seamless integration with Kotlin-based frameworks like Ktor, Http4k, and others, enabling efficient and scalable metric collection.
 
 Our approach focuses on extending Prometheus functionality within the Kotlin ecosystem by designing idiomatic APIs that simplify metric instrumentation while maintaining high performance. By utilizing Kotlin’s lightweight concurrency model, the library will support asynchronous metric collection, making it well-suited for modern, event-driven applications.
 
-Additionally, the library aims to provide extensions that facilitate effortless integration with popular Kotlin-based web frameworks, ensuring developers can easily expose and monitor application metrics. With a focus on usability, performance, and interoperability, this project will enhance observability in Kotlin applications while maintaining full compatibility with Prometheus’s existing ecosystem.
+Additionally, the library aims to provide extensions that facilitate effortless integration with popular Kotlin-based web frameworks, ensuring developers can easily expose and monitor application metrics. We will also utilize Grafana alongside Prometheus to visualize and analyze collected metrics, enhancing the monitoring experience and providing real-time insights into system performance.
 
 \section{Roadmap}
 \begin{table}[h!]
