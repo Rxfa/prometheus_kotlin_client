@@ -89,8 +89,7 @@ Kotlin Multiplatform\cite{kotlinmultiplatform:jetbrains} (KMP) is a technology t
 \subsection{Problem Overview}
 A client library is a software component that provides an interface for developers to interact with a specific system or service, abstracting complexities and facilitating integration. In the case of Prometheus, a client library allows applications to instrument and expose metrics in a structured format that Prometheus can scrape and process. An effective client library should provide an idiomatic API for the target language, ensuring ease of use, efficiency, and seamless integration with existing frameworks.
 
-While Prometheus provides robust monitoring capabilities, existing client libraries for the JVM are primarily designed for Java and do not fully leverage Kotlin’s unique features. Many of these solutions introduce unnecessary complexity when used in Kotlin-based applications, particularly those relying on frameworks like Ktor and Http4k.
-The lack of a dedicated Prometheus library for Kotlin leads to inefficiencies, increased boilerplate code, and limited support for Kotlin's concurrency model, such as coroutines. 
+While Prometheus provides robust monitoring capabilities, existing client libraries for the JVM are primarily designed for Java and do not fully leverage Kotlin’s unique features.
 
 \section{Problem Statement}
 Existing Prometheus client libraries for the JVM primarily cater to Java applications, with limited optimizations for Kotlin’s unique features. Many of these libraries require extensive boilerplate code and do not fully utilize Kotlin’s capabilities, such as coroutines for efficient asynchronous operations.
