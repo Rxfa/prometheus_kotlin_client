@@ -3,6 +3,7 @@
 \usepackage[english]{babel}
 \usepackage{graphicx}
 \usepackage{url}
+\usepackage{array} 
 
 % pdflatex
 
@@ -67,13 +68,8 @@ A Summary provides precomputed quantiles (e.g., median, 95th percentile) for pre
 
 Each type enhances observability, allowing Prometheus to monitor and diagnose system performance effectively.
 
-\subsection{Exporting a Library}
-When dealing with observability tools like Prometheus, exporting plays a crucial role in making collected metrics accessible. A library designed for observability should provide mechanisms to expose data in a structured format that monitoring systems can scrape and analyze. In the case of Prometheus, this usually means:
-\begin{itemize}
-    \item Providing an HTTP endpoint where metrics can be queried.
-    \item Formatting data according to the Prometheus exposition format.
-    \item Supporting different metric types such as counters, gauges, and histograms.
-\end{itemize}
+\subsection{Prometheus Client Libraries}
+Prometheus client libraries are language-specific tools that allow developers to instrument their own applications by exposing custom metrics. These libraries provide functions to define counters, gauges, histograms, and summaries, which can be used to track application performance, request durations, or error rates. Prometheus then scrapes these metrics directly from the application's HTTP endpoint. 
 
 \subsection{Problem Overview}
 A client library is a software component that provides an interface for developers to interact with a specific system or service, abstracting complexities and facilitating integration. In the case of Prometheus, a client library allows applications to instrument and expose metrics in a structured format that Prometheus can scrape and process. An effective client library should provide an idiomatic API for the target language, ensuring ease of use, efficiency, and seamless integration with existing frameworks.
@@ -103,11 +99,12 @@ Our approach focuses on extending Prometheus functionality within the Kotlin eco
 Additionally, the library aims to provide extensions that facilitate effortless integration with popular Kotlin-based web frameworks, ensuring developers can easily expose and monitor application metrics. We will also utilize Grafana alongside Prometheus to visualize and analyze collected metrics, enhancing the monitoring experience and providing real-time insights into system performance.
 
 \section{Roadmap}
-\begin{table}
+\begin{table}[h!]
 \centering
-\begin{tabular}{ |c|c|c|  }
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{ |c|c|m{10cm}|  }
   \hline
-  Date &Duration(weeks) &Task\\
+  \textbf{Date} &\textbf{Duration (weeks)} &\textbf{Task}\\
   \hline
   March 10, 2025   & 4 & \textbf{Delivery - Proposal delivery}\\
   \hline
