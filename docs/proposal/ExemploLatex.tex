@@ -4,6 +4,8 @@
 \usepackage{graphicx}
 \usepackage{url}
 \usepackage{array} 
+\usepackage{placeins}
+
 
 % pdflatex
 
@@ -45,6 +47,15 @@ March 2025}
 In this project proposal there are some key contextual topics that are important to clarify.
 The following paragraphs will explain the main context in detail.
 
+\subsection{Observability}
+Observability\cite{whatisobservability:ibm} refers to the ability to understand the internal state of a complex system by examining its external outputs, particularly its telemetry data. It is commonly built upon three main pillars: metrics, logs, and traces.
+
+\begin{itemize}
+  \item \textbf{Metrics:} Metrics are numerical data points that represent the state of a system over time. They are typically used to monitor the performance and health of a system. Examples include CPU usage, memory consumption, and request rates.
+  \item \textbf{Logs:} Logs are timestamped records of discrete events that have occurred within a system. They provide detailed context about what happened at a specific point in time, which is useful for debugging and auditing purposes.
+  \item \textbf{Traces:} Traces represent the end-to-end journey of a request as it travels through various components of a system. They help in understanding the flow of requests and identifying bottlenecks or failures in distributed systems.
+\end{itemize}
+
 \subsection{Prometheus}
 Prometheus \cite{prometheus:prometheus} is an open-source metrics-focused monitoring and alerting toolkit originally built at SoundCloud in 2012. Prometheus has, since then, become one of the most popular monitoring tools, seeing major adoption across the industry and the open-source community.
 It is now a standalone open-source project maintained independently of any company, joining the Cloud Native Computing Foundation in 2016 as the second hosted project after Kubernetes.
@@ -52,7 +63,7 @@ It is now a standalone open-source project maintained independently of any compa
 Prometheus is a pull-based monitoring system that scrapes metrics from instrumented jobs, either directly or via an intermediary push gateway for short-lived jobs.
 
 \subsection{Prometheus Metric Types}
-Prometheus provides four key metric types for system monitoring, each designed for specific performance tracking.
+Prometheus provides four key metric types for system monitoring, each designed for specific performance tracking\cite{metrictypes:prometheus}.
 
 \subsubsection{Counter}
 A Counter only increases or resets to zero on restart, useful for tracking requests or errors.
@@ -69,7 +80,11 @@ A Summary provides precomputed quantiles (e.g., median, 95th percentile) for pre
 Each type enhances observability, allowing Prometheus to monitor and diagnose system performance effectively.
 
 \subsection{Prometheus Client Libraries}
-Prometheus client libraries are language-specific tools that allow developers to instrument their own applications by exposing custom metrics. These libraries provide functions to define counters, gauges, histograms, and summaries, which can be used to track application performance, request durations, or error rates. Prometheus then scrapes these metrics directly from the application's HTTP endpoint. 
+Prometheus client libraries\cite{clientlibraries:prometheus} are language-specific tools that allow developers to instrument their own applications by exposing custom metrics. These libraries provide functions to define counters, gauges, histograms, and summaries, which can be used to track application performance, request durations, or error rates. Prometheus then scrapes these metrics directly from the application's HTTP endpoint. 
+
+\subsection{Kotlin Multiplatform}
+Kotlin Multiplatform\cite{kotlinmultiplatform:jetbrains} (KMP) is a technology that allows developers to share code across multiple platforms, including JVM, Android, iOS, and JavaScript. By writing shared code in Kotlin, developers can target multiple platforms without duplicating business logic. KMP is particularly useful for libraries and frameworks that need to support different platforms while maintaining a single codebase.
+
 
 \subsection{Problem Overview}
 A client library is a software component that provides an interface for developers to interact with a specific system or service, abstracting complexities and facilitating integration. In the case of Prometheus, a client library allows applications to instrument and expose metrics in a structured format that Prometheus can scrape and process. An effective client library should provide an idiomatic API for the target language, ensuring ease of use, efficiency, and seamless integration with existing frameworks.
@@ -95,7 +110,7 @@ The goal of this project is to develop a Prometheus client library tailored for 
 
 Our approach focuses on extending Prometheus functionality within the Kotlin ecosystem by designing idiomatic APIs that simplify metric instrumentation while maintaining high performance. By utilizing Kotlin’s lightweight concurrency model, the library will support asynchronous metric collection, making it well-suited for modern, event-driven applications.
 
-Additionally, the library aims to provide extensions that facilitate effortless integration with popular Kotlin-based web frameworks, ensuring developers can easily expose and monitor application metrics. We will also utilize Grafana alongside Prometheus to visualize and analyze collected metrics, enhancing the monitoring experience and providing real-time insights into system performance.
+Additionally, we will leverage Kotlin Multiplatform (KMP) to ensure broad compatibility across different platforms. KMP allows us to write shared business logic while maintaining platform-specific optimizations where necessary.
 
 \section{Roadmap}
 \begin{table}[h!]
@@ -129,6 +144,7 @@ Additionally, the library aims to provide extensions that facilitate effortless 
  \caption{Project's roadmap.}
  \label{table:2}
 \end{table}
+\FloatBarrier
 
 \bibliographystyle{plain}
 \bibliography{refs}
