@@ -54,16 +54,16 @@ Prometheus is a pull-based monitoring system that scrapes metrics from instrumen
 Prometheus provides four key metric types for system monitoring, each designed for specific performance tracking.
 
 \subsubsection{Counter}
-A Counter **only increases** or resets to zero on restart, useful for tracking requests or errors.
+A Counter only increases or resets to zero on restart, useful for tracking requests or errors.
 
 \subsubsection{Gauge}
-A Gauge can **increase or decrease**, monitoring fluctuating values like memory usage or active connections.
+A Gauge can increase or decrease, monitoring fluctuating values like memory usage or active connections.
 
 \subsubsection{Histogram}
-A Histogram groups values into **buckets** for analyzing distributions, useful for request and latency.
+A Histogram groups values into buckets for analyzing distributions, useful for request and latency.
 
 \subsubsection{Summary}
-A Summary provides **precomputed quantiles** (e.g., median, 95th percentile) for precise performance tracking.
+A Summary provides precomputed quantiles (e.g., median, 95th percentile) for precise performance tracking.
 
 Each type enhances observability, allowing Prometheus to monitor and diagnose system performance effectively.
 
@@ -74,6 +74,12 @@ When dealing with observability tools like Prometheus, exporting plays a crucial
     \item Formatting data according to the Prometheus exposition format.
     \item Supporting different metric types such as counters, gauges, and histograms.
 \end{itemize}
+
+\subsection{Problem Overview}
+While Prometheus provides robust monitoring capabilities, existing client libraries are primarily designed for Java and do not fully leverage Kotlin’s unique features. Many of these solutions introduce unnecessary complexity when used in Kotlin-based applications, particularly those relying on frameworks like Ktor and Http4k.  
+
+The lack of a dedicated Prometheus library for Kotlin leads to inefficiencies, increased boilerplate code, and limited support for Kotlin's concurrency model, such as coroutines. This project aims to address these issues by providing a Kotlin-native Prometheus client that optimally integrates with Kotlin's ecosystem while maintaining performance and usability.
+
 
 For a Kotlin-based Prometheus client library, the export process generally involves defining metric types, registering them within the application, and exposing them through an endpoint that Prometheus can scrape at regular intervals. This allows real-time collection and monitoring of performance data, aiding in debugging and system optimization.
 
