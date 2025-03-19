@@ -2,10 +2,9 @@ package io.github.kotlin.fibonacci
 
 actual abstract class Collector {
     actual abstract fun collect(): List<MetricFamilySamples>
-    actual abstract fun getName(): String?
 
     actual enum class Type {
-        COUNTER, GAUGE
+        COUNTER
     }
 
     /**
@@ -13,7 +12,7 @@ actual abstract class Collector {
      */
     actual class MetricFamilySamples actual constructor(
         val name: String,
-        val unit: String,
+        val unit: String?,
         val type: Type,
         val help: String,
         val samples: List<Sample>
@@ -42,4 +41,18 @@ actual abstract class Collector {
         return this
     }
 
+    companion object {
+        private val metricNameRegex = Regex("[a-zA-Z_:][a-zA-Z0-9_:]*")
+        private val metricLabelNameRegex = Regex("[a-zA-Z_][a-zA-Z0-9_]*")
+        private val reservedMetricLabelNameRegex = Regex("__.*")
+
+        fun checkMetricName(name: String) = require(metricNameRegex.matches(name)) { "Metric name '$name' is not valid." }
+
+        fun checkMetricLabelName(labelName: String){
+            require(metricLabelNameRegex.matches(labelName)) { "Metric label name '$labelName' is not valid." }
+            require(!reservedMetricLabelNameRegex.matches(labelName)){
+                "Metric label name '$labelName' is not valid. Reserved for internal use."
+            }
+        }
+    }
 }

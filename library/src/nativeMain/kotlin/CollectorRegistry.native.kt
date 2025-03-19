@@ -10,7 +10,12 @@ actual class CollectorRegistry {
     actual suspend fun clear() {
     }
 
-    actual suspend fun export() {
+    actual suspend fun collect(): List<List<Collector.MetricFamilySamples>> {
+        TODO("Not yet implemented")
+    }
+
+    actual suspend fun getCollectors(): List<Collector> {
+        TODO("Not yet implemented")
     }
 
     actual companion object {
@@ -18,7 +23,4 @@ actual class CollectorRegistry {
             get() = TODO("Not yet implemented")
     }
 
-    actual suspend fun collectors(): Set<Collector> {
-        TODO("Not yet implemented")
-    }
 }

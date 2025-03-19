@@ -3,7 +3,8 @@ package io.github.kotlin.fibonacci
 expect class Counter(
     name: String,
     help: String,
-    labelNames: List<String> = emptyList()
+    labelNames: List<String> = emptyList(),
+    unit: String = "",
 ): SimpleCollector<Counter.Child> {
 
     override fun newChild(): Child

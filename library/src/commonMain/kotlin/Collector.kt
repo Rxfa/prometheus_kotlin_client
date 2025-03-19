@@ -3,8 +3,6 @@ package io.github.kotlin.fibonacci
 expect abstract class Collector {
     abstract fun collect(): List<MetricFamilySamples>
 
-    abstract fun getName(): String?
-
     enum class Type{
         COUNTER,
     }
@@ -14,7 +12,7 @@ expect abstract class Collector {
      */
     class MetricFamilySamples(
         name: String,
-        unit: String,
+        unit: String?,
         type: Type,
         help: String,
         samples: List<Sample>

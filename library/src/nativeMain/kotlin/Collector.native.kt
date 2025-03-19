@@ -2,9 +2,8 @@ package io.github.kotlin.fibonacci
 
 actual abstract class Collector {
     actual abstract fun collect(): List<MetricFamilySamples>
-    actual abstract fun getName(): String?
     actual enum class Type {
-        COUNTER, GAUGE
+        COUNTER,
     }
 
     /**
@@ -12,7 +11,7 @@ actual abstract class Collector {
      */
     actual class MetricFamilySamples actual constructor(
         name: String,
-        unit: String,
+        unit: String?,
         type: Type,
         help: String,
         samples: List<Sample>

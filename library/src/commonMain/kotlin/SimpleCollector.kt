@@ -6,7 +6,8 @@ package io.github.kotlin.fibonacci
 expect abstract class SimpleCollector<Child>(
     fullName: String,
     help: String,
-    labelNames: List<String>
+    labelNames: List<String>,
+    unit: String
 ) : Collector {
 
     val childMetrics: MutableMap<List<String>, Child>
@@ -21,8 +22,6 @@ expect abstract class SimpleCollector<Child>(
     fun clear()
 
     fun initializeNoLabelsChild()
-
-    fun setChild(child: Child, vararg labelValues: String): Collector
 
     fun familySamplesList(type: Type, samples: List<Sample>): List<MetricFamilySamples>
 }

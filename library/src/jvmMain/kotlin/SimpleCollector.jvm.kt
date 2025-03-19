@@ -1,13 +1,19 @@
 package io.github.kotlin.fibonacci
 
 /**
- * Common functionality for Gauge and Counter.
+ * Common functionality for all Prometheus metric types.
  */
 actual abstract class SimpleCollector<Child> actual constructor(
     val fullName: String,
     val help: String,
-    val labelNames: List<String>
+    val labelNames: List<String>,
+    val unit: String
 ) : Collector() {
+    init {
+        checkMetricName(fullName)
+        labelNames.forEach{ checkMetricLabelName(it) }
+    }
+
     actual val childMetrics: MutableMap<List<String>, Child> = mutableMapOf()
     actual var noLabelsChild: Child? = null
 
@@ -36,17 +42,10 @@ actual abstract class SimpleCollector<Child> actual constructor(
         }
     }
 
-    actual fun setChild(child: Child, vararg labelValues: String): Collector{
-        require(labelValues.size == labelValues.size) { "Incorrect number of labels." }
-        childMetrics[labelValues.toList()] = child
-        return this
-    }
-
     actual fun familySamplesList(
         type: Type,
         samples: List<Sample>
     ): List<MetricFamilySamples> {
-        val unit = ""
         return mutableListOf(
             MetricFamilySamples(fullName, unit, type, help, samples)
         )

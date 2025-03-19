@@ -8,9 +8,9 @@ expect class CollectorRegistry {
 
     suspend fun clear()
 
-    suspend fun export()
+    suspend fun collect(): List<List<Collector. MetricFamilySamples>>
 
-    suspend fun collectors(): Set<Collector>
+    suspend fun getCollectors(): List<Collector>
 
     companion object {
         val defaultRegistry: CollectorRegistry

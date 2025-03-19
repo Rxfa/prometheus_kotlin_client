@@ -6,7 +6,8 @@ package io.github.kotlin.fibonacci
 actual abstract class SimpleCollector<Child> actual constructor(
     fullName: String,
     help: String,
-    labelNames: List<String>
+    labelNames: List<String>,
+    unit: String
 ) : Collector() {
     actual val childMetrics: MutableMap<List<String>, Child>
         get() = TODO("Not yet implemented")
@@ -26,10 +27,6 @@ actual abstract class SimpleCollector<Child> actual constructor(
     }
 
     actual fun initializeNoLabelsChild() {
-    }
-
-    actual fun setChild(child: Child, vararg labelValues: String): Collector {
-        TODO("Not yet implemented")
     }
 
     actual fun familySamplesList(
