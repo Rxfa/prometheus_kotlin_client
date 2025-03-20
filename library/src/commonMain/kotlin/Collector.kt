@@ -19,10 +19,11 @@ abstract class Collector(
 
     /**
      * A metric and all of its samples.
+     * Think of a metric as a category of observation (e.g 'Number of HTTP requests received')
      */
     class MetricFamilySamples(
         val name: String,
-        val unit: String?,
+        val unit: String = "",
         val type: Type,
         val help: String,
         val samples: List<Sample>
@@ -30,6 +31,9 @@ abstract class Collector(
 
     /**
      * A single Sample, with a unique name and set of labels.
+     * Think of a sample as a single measurement of a metric at a given time
+     *
+     * i.e 'http_requests_total{method="GET", status="200"} 1243 17195259443250043'
      */
     class Sample(
         val name: String,
@@ -40,7 +44,7 @@ abstract class Collector(
     )
 
 
-    suspend fun register(registry: CollectorRegistry): Collector {
+    suspend fun register(registry: CollectorRegistry = CollectorRegistry.defaultRegistry): Collector {
         registry.register(this)
         return this
     }
@@ -60,3 +64,5 @@ abstract class Collector(
         }
     }
 }
+
+expect fun Collector.getClassName(): String
