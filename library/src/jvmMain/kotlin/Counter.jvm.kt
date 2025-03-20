@@ -1,11 +1,14 @@
 package io.github.kotlin.fibonacci
 
 actual class Counter actual constructor(
-    name: String,
+    fullName: String,
     help: String,
     labelNames: List<String>,
     unit: String
-) : SimpleCollector<Counter.Child>(name, help, labelNames, unit) {
+) : SimpleCollector<Counter.Child>(fullName, help, labelNames, unit) {
+    override val name: String = if(fullName.endsWith("_total")) fullName else fullName + "_total"
+
+    override val type: Type = Type.COUNTER
 
     init {
         initializeNoLabelsChild()
@@ -36,7 +39,7 @@ actual class Counter actual constructor(
     actual override fun collect(): List<MetricFamilySamples> {
         val samples = mutableListOf<Sample>()
         for ((labels, child) in childMetrics){
-            val sampleName = if(fullName.endsWith("_total")) fullName else fullName + "_total"
+            val sampleName = if(name.endsWith("_total")) name else name + "_total"
             samples += Sample(
                 name = sampleName,
                 labelNames = labelNames,

@@ -1,7 +1,7 @@
 package io.github.kotlin.fibonacci
 
 expect class Counter(
-    name: String,
+    fullName: String,
     help: String,
     labelNames: List<String> = emptyList(),
     unit: String = "",

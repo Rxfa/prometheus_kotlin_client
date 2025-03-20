@@ -8,7 +8,7 @@ expect class CollectorRegistry {
 
     suspend fun clear()
 
-    suspend fun collect(): List<List<Collector. MetricFamilySamples>>
+    suspend fun collect(): List<Collector>
 
     suspend fun getCollectors(): List<Collector>
 

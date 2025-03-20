@@ -11,11 +11,9 @@ actual class CollectorRegistry {
 
     actual suspend fun register(collector: Collector) {
         val collectorName = collector.javaClass.simpleName
-        if (collectorName != null) {
-            val addedToRegistry = mutex.withLock { collectorNames.add(collectorName) }
-            if (!addedToRegistry) {
-                throw IllegalStateException("Collector is already registered: $collectorName")
-            }
+        val addedToRegistry = mutex.withLock { collectorNames.add(collectorName) }
+        if (!addedToRegistry) {
+            throw IllegalStateException("Collector is already registered: $collectorName")
         }
         mutex.withLock { this.collectors += collector }
     }
@@ -37,8 +35,8 @@ actual class CollectorRegistry {
         }
     }
 
-    actual suspend fun collect(): List<List<Collector. MetricFamilySamples>> {
-        return withContext(Dispatchers.Default) { getCollectors().map { it.collect() } }
+    actual suspend fun collect(): List<Collector> {
+        return withContext(Dispatchers.Default) { getCollectors() }
     }
 
     actual companion object {
