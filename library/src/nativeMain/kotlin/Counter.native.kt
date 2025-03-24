@@ -1,16 +1,25 @@
 package io.github.kotlin.fibonacci
 
 actual class Counter actual constructor(
-    name: String,
+    fullName: String,
     help: String,
     labelNames: List<String>,
-    unit: String
-) : SimpleCollector<Counter.Child>(name, help, labelNames, unit) {
+    unit: String,
+    includeCreatedSeries: Boolean
+) : SimpleCollector<Counter.Child>(fullName, help, labelNames, unit) {
+    override val suffixes: Set<String>
+        get() = TODO("Not yet implemented")
+
     actual override fun newChild(): Child {
         TODO("Not yet implemented")
     }
 
-    actual class Child {
+    override val name: String
+        get() = TODO("Not yet implemented")
+    override val type: Type
+        get() = TODO("Not yet implemented")
+
+    actual inner class Child {
         actual fun inc(amount: Double) {
         }
 
@@ -32,7 +41,7 @@ actual class Counter actual constructor(
         TODO("Not yet implemented")
     }
 
-    actual override fun collect(): List<Collector.MetricFamilySamples> {
+    actual override fun collect(): List<MetricFamilySamples> {
         TODO("Not yet implemented")
     }
 
