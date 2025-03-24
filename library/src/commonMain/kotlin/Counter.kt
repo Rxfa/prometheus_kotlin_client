@@ -1,15 +1,15 @@
 package io.github.kotlin.fibonacci
 
 expect class Counter(
-    name: String,
+    fullName: String,
     help: String,
     labelNames: List<String> = emptyList(),
     unit: String = "",
+    includeCreatedSeries: Boolean = false,
 ): SimpleCollector<Counter.Child> {
-
     override fun newChild(): Child
 
-    class Child {
+    inner class Child {
         fun inc(amount: Double = 1.0)
 
         fun get(): Double

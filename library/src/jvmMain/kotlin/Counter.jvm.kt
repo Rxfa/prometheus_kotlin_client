@@ -1,11 +1,17 @@
 package io.github.kotlin.fibonacci
 
 actual class Counter actual constructor(
-    name: String,
+    fullName: String,
     help: String,
     labelNames: List<String>,
-    unit: String
-) : SimpleCollector<Counter.Child>(name, help, labelNames, unit) {
+    unit: String,
+    val includeCreatedSeries: Boolean,
+) : SimpleCollector<Counter.Child>(fullName, help, labelNames, unit) {
+    override val suffixes: Set<String> = setOf("_total")
+
+    override val name: String = if(suffixes.any{ fullName.endsWith(it) }) fullName else fullName + "_total"
+
+    override val type: Type = Type.COUNTER
 
     init {
         initializeNoLabelsChild()
@@ -15,9 +21,9 @@ actual class Counter actual constructor(
         return Child()
     }
 
-    actual class Child {
+    actual inner class Child {
         private var value = 0.0
-        private var timestamp = System.currentTimeMillis()
+        private val created = getCurrentTime()
 
         actual fun inc(amount: Double) {
             require(amount >= 0) { "Value must be positive" }
@@ -26,7 +32,7 @@ actual class Counter actual constructor(
 
         actual fun get(): Double = value
 
-        actual fun created(): Long = timestamp
+        actual fun created(): Long = created
     }
 
     actual fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
@@ -36,14 +42,12 @@ actual class Counter actual constructor(
     actual override fun collect(): List<MetricFamilySamples> {
         val samples = mutableListOf<Sample>()
         for ((labels, child) in childMetrics){
-            val sampleName = if(fullName.endsWith("_total")) fullName else fullName + "_total"
-            samples += Sample(
-                name = sampleName,
-                labelNames = labelNames,
-                labelValues = labels,
-                value = child.get(),
-            )
+            samples += Sample(name = name, labelNames = labelNames, labelValues = labels, value = child.get())
+            if(includeCreatedSeries){
+                val createdSeriesName = name.removeSuffix("_total") + "_created"
+                samples += Sample(name = createdSeriesName, labelNames = labelNames, labelValues = labels, value = child.get())
+            }
         }
-        return familySamplesList(Type.COUNTER, samples)
+        return familySamplesList(samples)
     }
 }
