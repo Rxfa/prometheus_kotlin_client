@@ -23,19 +23,25 @@ actual class Counter actual constructor(
 
     actual inner class Child {
         private var value = 0.0
-        private val created = getCurrentTime()
 
         actual fun inc(amount: Double) {
             require(amount >= 0) { "Value must be positive" }
             value += amount
         }
 
-        actual fun get(): Double = value
+        actual fun inc(){
+            value += 1.0
+        }
 
-        actual fun created(): Long = created
+        actual fun get(): Double = value
     }
 
-    actual fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
+    actual fun inc(amount: Double): Unit? {
+        require(amount >= 0) { "Amount must be positive" }
+        return noLabelsChild?.inc(amount)
+    }
+
+    actual fun inc(): Unit? = noLabelsChild?.inc()
 
     actual fun get(): Double = noLabelsChild?.get() ?: 0.0
 

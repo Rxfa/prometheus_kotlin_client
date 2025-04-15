@@ -10,15 +10,17 @@ expect class Counter(
     override fun newChild(): Child
 
     inner class Child {
-        fun inc(amount: Double = 1.0)
+        fun inc(amount: Double)
+
+        fun inc()
 
         fun get(): Double
-
-        fun created(): Long
     }
 
 
-    fun inc(amount: Double = 1.0): Unit?
+    fun inc(amount: Double): Unit?
+
+    fun inc(): Unit?
 
     fun get(): Double
 
