@@ -22,5 +22,5 @@ expect class Counter(
 
     fun get(): Double
 
-    override fun collect(): List<MetricFamilySamples>
+    override fun collect(): MetricFamilySamples
 }

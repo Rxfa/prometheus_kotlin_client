@@ -45,9 +45,7 @@ abstract class SimpleCollector<Child>(
 
     protected fun familySamplesList(
         samples: List<Sample>
-    ): List<MetricFamilySamples> {
-        return mutableListOf(
-            MetricFamilySamples(name, unit, type, help, samples)
-        )
+    ): MetricFamilySamples {
+        return MetricFamilySamples(name, unit, type, help, samples)
     }
 }

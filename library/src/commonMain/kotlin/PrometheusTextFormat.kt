@@ -27,17 +27,15 @@ class PrometheusTextFormat {
     }
 
     private fun StringBuilder.writeCounter(collector: Counter, withTimestamp: Boolean) {
-        val metricFamily = collector.collect()
-        for (metric in metricFamily) {
-            for(sample in metric.samples) {
-                val sampleLabelValues = sample.labelValues.map { doubleQuoteString(it) }
-                val labels = (sample.labelNames zip sampleLabelValues)
-                    .joinToString(prefix = "{", separator = ",", postfix = "}") { (key, value) -> "$key=$value" }
-                if(withTimestamp) {
-                    this.append("${sample.name}$labels ${sample.value} ${sample.timestamp}\n")
-                } else {
-                    this.append("${sample.name}$labels ${sample.value}\n")
-                }
+        val metric = collector.collect()
+        for(sample in metric.samples) {
+            val sampleLabelValues = sample.labelValues.map { doubleQuoteString(it) }
+            val labels = (sample.labelNames zip sampleLabelValues)
+                .joinToString(prefix = "{", separator = ",", postfix = "}") { (key, value) -> "$key=$value" }
+            if(withTimestamp) {
+                this.append("${sample.name}$labels ${sample.value} ${sample.timestamp}\n")
+            } else {
+                this.append("${sample.name}$labels ${sample.value}\n")
             }
         }
     }

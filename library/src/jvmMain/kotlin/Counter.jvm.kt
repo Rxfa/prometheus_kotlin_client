@@ -39,7 +39,7 @@ actual class Counter actual constructor(
 
     actual fun get(): Double = noLabelsChild?.get() ?: 0.0
 
-    actual override fun collect(): List<MetricFamilySamples> {
+    actual override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
         for ((labels, child) in childMetrics){
             samples += Sample(name = name, labelNames = labelNames, labelValues = labels, value = child.get())
