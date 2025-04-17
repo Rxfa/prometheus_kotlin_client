@@ -10,7 +10,7 @@ abstract class Collector(
 
     abstract val type: Type
 
-    abstract fun collect(): List<MetricFamilySamples>
+    abstract fun collect(): MetricFamilySamples
 
     enum class Type(val typeName: String) {
         COUNTER("counter"),
@@ -64,5 +64,3 @@ abstract class Collector(
         }
     }
 }
-
-expect fun Collector.getClassName(): String
