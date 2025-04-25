@@ -1,5 +1,8 @@
 package io.github.kotlin.fibonacci
 
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.DoubleAdder
+
 actual class Counter actual constructor(
     fullName: String,
     help: String,
@@ -22,15 +25,15 @@ actual class Counter actual constructor(
     }
 
     actual inner class Child {
-        private var value = 0.0
+        private var value = DoubleAdder()
         private val created = getCurrentTime()
 
         actual fun inc(amount: Double) {
             require(amount >= 0) { "Value must be positive" }
-            value += amount
+            value.add(amount)
         }
 
-        actual fun get(): Double = value
+        actual fun get(): Double = value.sum()
 
         actual fun created(): Long = created
     }
