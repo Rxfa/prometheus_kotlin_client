@@ -1,6 +1,12 @@
 package io.github.kotlin.fibonacci
 
-expect fun getCurrentTime(): Long
+import kotlinx.datetime.Clock
+
+fun getCurrentTime(): Long {
+    return Clock.System.now().toEpochMilliseconds()
+}
+
+expect fun Collector.getClassName(): String
 
 fun doubleQuoteString(s: String): String = when{
     s.startsWith("\"") && s.endsWith("\"") -> s

@@ -1,5 +1,5 @@
 package io.github.kotlin.fibonacci
 
-actual fun getCurrentTime(): Long {
-    TODO("Not yet implemented")
+actual fun Collector.getClassName(): String {
+    return this::class.qualifiedName!!
 }

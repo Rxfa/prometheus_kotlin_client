@@ -27,6 +27,12 @@ class CounterTest {
     }
 
     @Test
+    fun `counter with labels starts on zero`(){
+        val counter = Counter("requests_total", "Total number of requests.", listOf("Method")).labels("get")
+        assertEquals(0.0, counter.get())
+    }
+
+    @Test
     fun `counter with labels increments correctly`(){
         val counter = Counter("requests_total", "Total number of requests.", listOf("Method"))
         val getCounter = counter.labels("GET")
@@ -37,5 +43,11 @@ class CounterTest {
 
         assertEquals(1.0, getCounter.get())
         assertEquals(3.0, postCounter.get())
+    }
+
+    @Test
+    fun `counter with labels increment with negative value throws exception`(){
+        val counterWithLabel = Counter("requests_total", "Total number of requests.", listOf("method")).labels("get")
+        assertFailsWith<IllegalArgumentException>{counterWithLabel.inc(-1.0)}
     }
 }
