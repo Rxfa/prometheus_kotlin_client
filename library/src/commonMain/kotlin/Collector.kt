@@ -15,6 +15,7 @@ abstract class Collector(
     enum class Type(val typeName: String) {
         COUNTER("counter"),
         UNKNOWN("unknown"),
+        GAUGE("gauge"),
     }
 
     /**
@@ -40,7 +41,7 @@ abstract class Collector(
         val labelNames: List<String>,
         val labelValues: List<String>,
         val value: Double,
-        val timestamp: Long = getCurrentTime()
+        val timestamp: Long = getCurrentMillis()
     )
 
 
