@@ -3,9 +3,9 @@ package io.github.kotlin.fibonacci
 class Counter(
     fullName: String,
     help: String,
-    labelNames: List<String>,
-    unit: String,
-    val includeCreatedSeries: Boolean,
+    labelNames: List<String> = listOf(),
+    unit: String = "",
+    val includeCreatedSeries: Boolean = false,
 ) : SimpleCollector<Counter.Child>(fullName, help, labelNames, unit) {
     override val suffixes: Set<String> = setOf("_total")
 
