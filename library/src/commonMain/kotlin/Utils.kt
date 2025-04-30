@@ -2,8 +2,12 @@ package io.github.kotlin.fibonacci
 
 import kotlinx.datetime.Clock
 
-fun getCurrentTime(): Long {
-    return Clock.System.now().toEpochMilliseconds()
+fun getCurrentMillis(clock: Clock = Clock.System): Long {
+    return clock.now().toEpochMilliseconds()
+}
+
+fun getCurrentSeconds(clock: Clock = Clock.System): Long {
+    return clock.now().epochSeconds
 }
 
 expect fun Collector.getClassName(): String

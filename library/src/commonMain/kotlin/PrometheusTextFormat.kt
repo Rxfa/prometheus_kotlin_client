@@ -5,10 +5,7 @@ class PrometheusTextFormat {
         val stringBuilder = StringBuilder()
         for (collector in collectors) {
             stringBuilder.writeMetricMetadata(collector)
-            when (collector) {
-                is Counter -> stringBuilder.writeCounter(collector, withTimestamp)
-                else -> stringBuilder.writeCustomCollector(collector, withTimestamp)
-            }
+            stringBuilder.writeMetricData(collector, withTimestamp)
             stringBuilder.append("\n")
         }
         return stringBuilder.toString()
@@ -22,11 +19,7 @@ class PrometheusTextFormat {
         this.append("# HELP ${collector.name} ${collector.help}\n")
     }
 
-    private fun StringBuilder.writeCustomCollector(collector: Collector, withTimestamp: Boolean) {
-        TODO()
-    }
-
-    private fun StringBuilder.writeCounter(collector: Counter, withTimestamp: Boolean) {
+    private fun StringBuilder.writeMetricData(collector: Collector, withTimestamp: Boolean) {
         val metric = collector.collect()
         for(sample in metric.samples) {
             val sampleLabelValues = sample.labelValues.map { doubleQuoteString(it) }
