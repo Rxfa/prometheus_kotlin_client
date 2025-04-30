@@ -46,7 +46,7 @@ actual class Histogram actual constructor(
         return noLabelsChild?.get() ?: 0.0
     }
 
-    actual override fun collect(): List<MetricFamilySamples> {
+    actual override fun collect(): MetricFamilySamples {
         return familySamplesList(emptyList())
     }
 
