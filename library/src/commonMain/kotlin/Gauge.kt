@@ -1,5 +1,9 @@
 package io.github.kotlin.fibonacci
 
+import kotlinx.atomicfu.AtomicLong
+import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 
 class Gauge(
@@ -24,94 +28,120 @@ class Gauge(
 
 
     inner class Child(){
-        private var value = 0.0
-
+        private var valueLong = atomic(0L)
+        private var valueDouble = atomic(0.0)
         /**
          * Increment the gauge by the given amount.
          */
-        fun inc(amount: Double){
+        suspend fun inc(amount: Double){
             require(amount >= 0) { "Increment must be non-negative" }
-            value += amount
+            withContext(Dispatchers.Default){
+                while(true){
+                    val current = valueDouble.value
+                    if (valueDouble.compareAndSet(current, current + amount)){
+                        break
+                    }
+                }
+            }
         }
 
         /**
          * Increment the gauge by 1.
          */
-        fun inc(){
-            value += 1
+        suspend fun inc(){
+            withContext(Dispatchers.Default){
+                valueLong.getAndIncrement()
+            }
         }
 
         /**
          * Decrement the Gauge by the given amount.
          */
-        fun dec(amount: Double){
+        suspend fun dec(amount: Double){
             require(amount >= 0) { "Decrement must be non-negative" }
-            value -= amount
+            withContext(Dispatchers.Default){
+                while(true){
+                    val current = valueDouble.value
+                    if (valueDouble.compareAndSet(current, current - amount)){
+                        break
+                    }
+                }
+            }
         }
 
         /**
          * Decrement the gauge by 1.
          */
-        fun dec(){
-            value -= 1
+        suspend fun dec(){
+            withContext(Dispatchers.Default){
+                valueLong.getAndDecrement()
+            }
         }
 
         /**
          * Set the gauge to the given value.
          */
-        fun set(amount: Double){
-            value = amount
+        suspend fun set(amount: Double) {
+            withContext(Dispatchers.Default) {
+                valueLong.value = 0L
+                valueDouble.value = amount
+            }
         }
+
 
         /**
          * Set the gauge to the current unixtime in seconds.
          */
-        fun setToCurrentTime(){
-            value = getCurrentSeconds(clock).toDouble()
+        suspend fun setToCurrentTime(){
+            withContext(Dispatchers.Default){
+                valueLong.value = 0L
+                valueDouble.value = getCurrentSeconds(clock).toDouble()
+            }
+
         }
 
-        fun get(): Double = value
+        fun get(): Double = valueLong.value + valueDouble.value
     }
 
     /**
      * Increment the gauge by 1.
      */
-    fun inc(){
+    suspend fun inc(){
         noLabelsChild?.inc()
     }
 
     /**
      * Increment the gauge by the given amount.
      */
-    fun inc(amount: Double){
+    suspend fun inc(amount: Double){
         noLabelsChild?.inc(amount)
     }
 
     /**
      * Decrement the gauge by 1.
      */
-    fun dec(){
+    suspend fun dec(){
         noLabelsChild?.dec()
     }
 
     /**
      * Decrement the Gauge by the given amount.
      */
-    fun dec(amount: Double){
+    suspend fun dec(amount: Double){
         noLabelsChild?.dec(amount)
     }
 
     /**
      * Set the gauge to the given value.
      */
-    fun set(amount: Double){
+    suspend fun set(amount: Double){
         noLabelsChild?.set(amount)
     }
 
     /**
      * Set the gauge to the current unixtime in seconds.
      */
-    fun setToCurrentTime() {
+    suspend fun setToCurrentTime() {
         noLabelsChild?.setToCurrentTime()
     }
 
