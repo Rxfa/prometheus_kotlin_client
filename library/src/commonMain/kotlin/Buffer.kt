@@ -45,6 +45,53 @@ class Buffer {
     fun reset() {
         reset = true
     }
+
+
+    suspend fun <T> run(
+        complete: (Long) -> Boolean,
+        createResult: () -> T,
+        observeFunction: (Double) -> Unit
+    ): T = withContext(Dispatchers.Default) {
+        val buffer: DoubleArray
+        val bufferSize: Int
+        val result: T
+
+        runLock.withLock {
+            val expectedCount = observationCount.getAndAdd(bufferActiveBit)
+
+            while (!complete(expectedCount)) {
+                kotlinx.coroutines.yield()
+            }
+
+            result = createResult()
+
+            val expectedBufferSize: Int = if (reset) {
+                val count = observationCount.getAndSet(0) and bufferActiveBit.inv()
+                reset = false
+                (count - expectedCount).toInt()
+            } else {
+                (observationCount.addAndGet(bufferActiveBit) - expectedCount).toInt()
+            }
+
+            appendLock.withLock {
+                while (bufferPos < expectedBufferSize) {
+                    kotlinx.coroutines.yield()
+                }
+            }
+
+            buffer = observationBuffer
+            bufferSize = bufferPos
+            observationBuffer = DoubleArray(0)
+            bufferPos = 0
+        }
+
+        for (i in 0 until bufferSize) {
+            observeFunction(buffer[i])
+        }
+
+        return@withContext result
+    }
+
 }
 
 /**
