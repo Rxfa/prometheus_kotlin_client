@@ -1,6 +1,7 @@
 package io.github.kotlin.fibonacci
 
 import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -28,29 +29,24 @@ class Counter(
     inner class Child {
         //TODO(WOULD BE MORE EFFICIENT UDSING JAVA ADDERS)
         //TODO(LOOK IF @PublishedApi is worthit)
-        private var valueDouble = atomic(0.0)
-        private var valueLong = atomic(0L)
+        private var value = atomic(0.0.toRawBits())
 
         suspend fun inc(amount: Double) {
             require(amount >= 0) { "Value must be positive" }
             withContext(Dispatchers.Default){
-                while(true){
-                    val current = valueDouble.value
-                    if (valueDouble.compareAndSet(current, current + amount)){
-                        break
-                    }
+                 value.updateAndGet { currentBits ->
+                     val current = Double.fromBits(currentBits)
+                     val updated = current + amount
+                     updated.toBits()
                 }
             }
         }
 
         suspend fun inc(){
-            withContext(Dispatchers.Default){
-                valueLong.getAndIncrement()
-            }
+            inc(1.0)
         }
 
-        fun get(): Double =
-            valueLong.value + valueDouble.value
+        fun get(): Double = Double.fromBits(value.value)
 
     }
 
@@ -61,7 +57,7 @@ class Counter(
 
     suspend fun inc(): Unit? = noLabelsChild?.inc()
 
-    suspend fun get(): Double = noLabelsChild?.get() ?: 0.0
+    fun get(): Double = noLabelsChild?.get() ?: 0.0
 
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()

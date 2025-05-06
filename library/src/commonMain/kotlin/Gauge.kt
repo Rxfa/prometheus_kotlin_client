@@ -2,6 +2,7 @@ package io.github.kotlin.fibonacci
 
 import kotlinx.atomicfu.AtomicLong
 import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
@@ -28,19 +29,15 @@ class Gauge(
 
 
     inner class Child(){
-        private var valueLong = atomic(0L)
-        private var valueDouble = atomic(0.0)
-        /**
-         * Increment the gauge by the given amount.
-         */
+        private var value = atomic(0.0.toRawBits())
+
         suspend fun inc(amount: Double){
             require(amount >= 0) { "Increment must be non-negative" }
             withContext(Dispatchers.Default){
-                while(true){
-                    val current = valueDouble.value
-                    if (valueDouble.compareAndSet(current, current + amount)){
-                        break
-                    }
+                value.updateAndGet { currentBits ->
+                    val current = Double.fromBits(currentBits)
+                    val updated = current + amount
+                    updated.toBits()
                 }
             }
         }
@@ -49,9 +46,7 @@ class Gauge(
          * Increment the gauge by 1.
          */
         suspend fun inc(){
-            withContext(Dispatchers.Default){
-                valueLong.getAndIncrement()
-            }
+            inc(1.0)
         }
 
         /**
@@ -60,11 +55,10 @@ class Gauge(
         suspend fun dec(amount: Double){
             require(amount >= 0) { "Decrement must be non-negative" }
             withContext(Dispatchers.Default){
-                while(true){
-                    val current = valueDouble.value
-                    if (valueDouble.compareAndSet(current, current - amount)){
-                        break
-                    }
+                value.updateAndGet { currentBits ->
+                    val current = Double.fromBits(currentBits)
+                    val updated = current - amount
+                    updated.toBits()
                 }
             }
         }
@@ -73,9 +67,7 @@ class Gauge(
          * Decrement the gauge by 1.
          */
         suspend fun dec(){
-            withContext(Dispatchers.Default){
-                valueLong.getAndDecrement()
-            }
+            dec(1.0)
         }
 
         /**
@@ -83,8 +75,7 @@ class Gauge(
          */
         suspend fun set(amount: Double) {
             withContext(Dispatchers.Default) {
-                valueLong.value = 0L
-                valueDouble.value = amount
+                value.value = amount.toRawBits()
             }
         }
 
@@ -94,13 +85,12 @@ class Gauge(
          */
         suspend fun setToCurrentTime(){
             withContext(Dispatchers.Default){
-                valueLong.value = 0L
-                valueDouble.value = getCurrentSeconds(clock).toDouble()
+                value.value = getCurrentSeconds(clock).toDouble().toRawBits()
             }
 
         }
 
-        fun get(): Double = valueLong.value + valueDouble.value
+        fun get(): Double = Double.fromBits(value.value)
     }
 
     /**
