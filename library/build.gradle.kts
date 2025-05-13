@@ -39,6 +39,12 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
             }
         }
+        val jvmMain by getting {
+
+        }
+        val jvmTest by getting {
+
+        }
     }
 }
 
@@ -53,7 +59,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 }
-
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
 

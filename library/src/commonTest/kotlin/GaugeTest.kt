@@ -1,5 +1,8 @@
 import io.github.kotlin.fibonacci.Gauge
 import io.github.kotlin.fibonacci.getCurrentSeconds
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
@@ -89,6 +92,46 @@ class GaugeTest {
             gauge.setToCurrentTime()
             assertEquals(getCurrentSeconds(FixedClock).toDouble(), gauge.get())
         }
+    }
+
+    @Test
+    fun `Gauge Increments are Thread safe`(){
+        runTest{
+            val reps = 100
+            val parl = 1000
+            val gauge = Gauge(validFullName, validHelpText)
+            coroutineScope {
+                List(parl) {
+                    async {
+                        repeat(reps) {
+                            gauge.inc()
+                        }
+                    }
+                }.awaitAll()
+            }
+            assertEquals(reps * parl.toDouble(), gauge.get())
+        }
+
+    }
+
+    @Test
+    fun `Gauge Decrements are Thread safe`(){
+        runTest{
+            val reps = 100
+            val parl = 1000
+            val gauge = Gauge(validFullName, validHelpText)
+            coroutineScope {
+                List(parl) {
+                    async {
+                        repeat(reps) {
+                            gauge.dec()
+                        }
+                    }
+                }.awaitAll()
+            }
+            assertEquals(-reps * parl.toDouble(), gauge.get())
+        }
+
     }
 
 }

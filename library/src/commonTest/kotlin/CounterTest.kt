@@ -1,5 +1,5 @@
 import io.github.kotlin.fibonacci.Counter
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -62,6 +62,26 @@ class CounterTest {
             val counterWithLabel = Counter("requests_total", "Total number of requests.", listOf("method")).labels("get")
 
             assertFailsWith<IllegalArgumentException>{counterWithLabel.inc(-1.0)}
+        }
+    }
+
+
+    @Test
+    fun `counter increments are thread safe`() {
+        runBlocking {
+            val reps = 1000
+            val parl = 10000
+            val counter = Counter("points_earned_total", "Total points earned by users.")
+            coroutineScope {
+                List(parl) {
+                    async {
+                        repeat(reps) {
+                            counter.inc()
+                        }
+                    }
+                }.awaitAll()
+            }
+            assertEquals(reps * parl.toDouble(), counter.get())
         }
     }
 }
