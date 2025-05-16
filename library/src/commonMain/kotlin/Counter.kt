@@ -1,5 +1,7 @@
 package io.github.kotlin.fibonacci
 
+import kotlin.reflect.KClass
+
 class Counter(
     fullName: String,
     help: String,
@@ -34,6 +36,17 @@ class Counter(
         }
 
         fun get(): Double = value
+
+        fun <T> countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+            return try {
+                block()
+            } catch (e: Throwable) {
+                if (exceptionTypes.isEmpty() || e::class in exceptionTypes) {
+                    inc()
+                }
+                null
+            }
+        }
     }
 
     fun inc(amount: Double): Unit? {
@@ -44,6 +57,17 @@ class Counter(
     fun inc(): Unit? = noLabelsChild?.inc()
 
     fun get(): Double = noLabelsChild?.get() ?: 0.0
+
+    fun <T> countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+        return try {
+            block()
+        } catch (e: Throwable) {
+            if (exceptionTypes.isEmpty() || e::class in exceptionTypes) {
+                inc()
+            }
+            null
+        }
+    }
 
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
