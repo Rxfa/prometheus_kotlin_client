@@ -1,4 +1,3 @@
-import io.github.kotlin.fibonacci.PrometheusExporter
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -13,23 +12,24 @@ class KtorTest{
     fun testKtorIntegration(){
         testApplication {
             application {
-                installPrometheusMetrics(PrometheusExporter())
+                installPrometheusMetrics()
             }
 
             val response = client.get("/metrics")
+            val responseBody = response.bodyAsText()
             assertEquals(HttpStatusCode.OK, response.status)
             assertEquals(ContentType.Text.Plain, response.contentType()!!.withoutParameters())
-            assertContains(response.bodyAsText(), "# TYPE http_requests_total counter")
-            assertContains(response.bodyAsText(), "# HELP http_requests_total Total HTTP requests received")
-            assertContains(response.bodyAsText(), "http_requests_total{} 0.0")
+            assertContains(responseBody, "# TYPE http_requests_total counter")
+            assertContains(responseBody, "# HELP http_requests_total Total HTTP requests received")
+            assertContains(responseBody, "http_requests_total{method=\"GET\",path=\"/metrics\"} 1.0")
         }
     }
 
     @Test
-    fun testRequestCounter(){
+    fun testTotalHTTPRequestCount(){
         testApplication {
             application {
-                installPrometheusMetrics(PrometheusExporter())
+                installPrometheusMetrics()
             }
 
             /**
@@ -38,12 +38,35 @@ class KtorTest{
              */
             client.get("/")
             val response = client.get("/metrics")
-
+            val responseBody = response.bodyAsText()
             assertEquals(HttpStatusCode.OK, response.status)
             assertEquals(ContentType.Text.Plain, response.contentType()!!.withoutParameters())
-            assertContains(response.bodyAsText(), "# TYPE http_requests_total counter")
-            assertContains(response.bodyAsText(), "# HELP http_requests_total Total HTTP requests received")
-            assertContains(response.bodyAsText(), "http_requests_total{} 1.0")
+            assertContains(responseBody, "# TYPE http_requests_total counter")
+            assertContains(responseBody, "# HELP http_requests_total Total HTTP requests received")
+            assertContains(responseBody, "http_requests_total{method=\"GET\",path=\"/metrics\"} 1.0")
+        }
+    }
+
+    @Test
+    fun testTotalErrorCount(){
+        testApplication {
+            application {
+                installPrometheusMetrics()
+            }
+
+            client.get("/non-existing-path").apply {
+                assertEquals(HttpStatusCode.NotFound, status)
+            }
+            val response = client.get("/metrics")
+            val responseBody = response.bodyAsText()
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(ContentType.Text.Plain, response.contentType()!!.withoutParameters())
+            assertContains(responseBody, "# TYPE http_requests_errors_total counter")
+            assertContains(responseBody, "# HELP http_requests_errors_total Total HTTP requests errors")
+            assertContains(
+                responseBody,
+                "http_requests_errors_total{method=\"GET\",status_code=\"404\",path=\"/non-existing-path\"} 1.0"
+            )
         }
     }
 }
