@@ -1,6 +1,7 @@
 package io.github.kotlin.fibonacci
 
 import kotlinx.datetime.Clock
+import kotlin.time.measureTime
 
 class Gauge(
     fullName: String,
@@ -71,6 +72,24 @@ class Gauge(
         }
 
         fun get(): Double = value
+
+        inline fun <T> track(block: () -> T): T {
+            inc()
+            try {
+                return block()
+            } finally {
+                dec()
+            }
+        }
+
+        fun <T> setDuration(block: () -> T): T{
+            val result: T
+            val secondsTaken = measureTime {
+                block().also { result = it }
+            }.inWholeSeconds.toDouble()
+            set(secondsTaken)
+            return result
+        }
     }
 
     /**
@@ -117,6 +136,24 @@ class Gauge(
 
     fun get(): Double {
         return noLabelsChild?.get() ?: 0.0
+    }
+
+    inline fun <T> track(block: () -> T): T {
+        inc()
+        try {
+            return block()
+        } finally {
+            dec()
+        }
+    }
+
+    fun <T> setDuration(block: () -> T): T{
+        val result: T
+        val secondsTaken = measureTime {
+            block().also { result = it }
+        }.inWholeSeconds.toDouble()
+        set(secondsTaken)
+        return result
     }
 
     override fun collect(): MetricFamilySamples {
