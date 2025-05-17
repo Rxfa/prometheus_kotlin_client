@@ -3,7 +3,7 @@ package io.github.kotlin.fibonacci
 import kotlinx.datetime.Clock
 import kotlin.time.measureTime
 
-class Gauge(
+public class Gauge(
     fullName: String,
     help: String,
     labelNames: List<String> = listOf(),
@@ -24,13 +24,13 @@ class Gauge(
     }
 
 
-    inner class Child(){
+    public inner class Child(){
         private var value = 0.0
 
         /**
          * Increment the gauge by the given amount.
          */
-        fun inc(amount: Double){
+        public fun inc(amount: Double){
             require(amount >= 0) { "Increment must be non-negative" }
             value += amount
         }
@@ -38,14 +38,14 @@ class Gauge(
         /**
          * Increment the gauge by 1.
          */
-        fun inc(){
+        public fun inc(){
             value += 1
         }
 
         /**
          * Decrement the Gauge by the given amount.
          */
-        fun dec(amount: Double){
+        public fun dec(amount: Double){
             require(amount >= 0) { "Decrement must be non-negative" }
             value -= amount
         }
@@ -53,27 +53,27 @@ class Gauge(
         /**
          * Decrement the gauge by 1.
          */
-        fun dec(){
+        public fun dec(){
             value -= 1
         }
 
         /**
          * Set the gauge to the given value.
          */
-        fun set(amount: Double){
+        public fun set(amount: Double){
             value = amount
         }
 
         /**
          * Set the gauge to the current unixtime in seconds.
          */
-        fun setToCurrentTime(){
+        public fun setToCurrentTime(){
             value = getCurrentSeconds(clock).toDouble()
         }
 
-        fun get(): Double = value
+        public fun get(): Double = value
 
-        inline fun <T> track(block: () -> T): T {
+        public inline fun <T> track(block: () -> T): T {
             inc()
             try {
                 return block()
@@ -82,7 +82,7 @@ class Gauge(
             }
         }
 
-        fun <T> setDuration(block: () -> T): T{
+        public fun <T> setDuration(block: () -> T): T{
             val result: T
             val secondsTaken = measureTime {
                 block().also { result = it }
@@ -95,50 +95,50 @@ class Gauge(
     /**
      * Increment the gauge by 1.
      */
-    fun inc(){
+    public fun inc(){
         noLabelsChild?.inc()
     }
 
     /**
      * Increment the gauge by the given amount.
      */
-    fun inc(amount: Double){
+    public fun inc(amount: Double){
         noLabelsChild?.inc(amount)
     }
 
     /**
      * Decrement the gauge by 1.
      */
-    fun dec(){
+    public fun dec(){
         noLabelsChild?.dec()
     }
 
     /**
      * Decrement the Gauge by the given amount.
      */
-    fun dec(amount: Double){
+    public fun dec(amount: Double){
         noLabelsChild?.dec(amount)
     }
 
     /**
      * Set the gauge to the given value.
      */
-    fun set(amount: Double){
+    public fun set(amount: Double){
         noLabelsChild?.set(amount)
     }
 
     /**
      * Set the gauge to the current unixtime in seconds.
      */
-    fun setToCurrentTime() {
+    public fun setToCurrentTime() {
         noLabelsChild?.setToCurrentTime()
     }
 
-    fun get(): Double {
+    public fun get(): Double {
         return noLabelsChild?.get() ?: 0.0
     }
 
-    inline fun <T> track(block: () -> T): T {
+    public inline fun <T> track(block: () -> T): T {
         inc()
         try {
             return block()
@@ -147,7 +147,7 @@ class Gauge(
         }
     }
 
-    fun <T> setDuration(block: () -> T): T{
+    public fun <T> setDuration(block: () -> T): T{
         val result: T
         val secondsTaken = measureTime {
             block().also { result = it }

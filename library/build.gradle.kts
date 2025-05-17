@@ -11,6 +11,7 @@ group = "io.github.kotlin"
 version = "1.0.0"
 
 kotlin {
+    explicitApi()
     jvm()
     androidTarget {
         publishLibraryVariants("release")
