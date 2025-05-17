@@ -10,7 +10,6 @@ public class Gauge(
     unit: String = "",
     private val clock: Clock = Clock.System,
 ) : SimpleCollector<Gauge.Child>(fullName, help, labelNames, unit) {
-
     override val suffixes: Set<String> = setOf()
     override val name: String = fullName
     override val type: Type = Type.GAUGE
@@ -24,7 +23,7 @@ public class Gauge(
     }
 
 
-    public inner class Child(){
+    public inner class Child {
         private var value = 0.0
 
         /**
@@ -39,7 +38,7 @@ public class Gauge(
          * Increment the gauge by 1.
          */
         public fun inc(){
-            value += 1
+            inc(1.0)
         }
 
         /**
@@ -54,7 +53,7 @@ public class Gauge(
          * Decrement the gauge by 1.
          */
         public fun dec(){
-            value -= 1
+            dec(1.0)
         }
 
         /**
@@ -72,24 +71,6 @@ public class Gauge(
         }
 
         public fun get(): Double = value
-
-        public inline fun <T> track(block: () -> T): T {
-            inc()
-            try {
-                return block()
-            } finally {
-                dec()
-            }
-        }
-
-        public fun <T> setDuration(block: () -> T): T{
-            val result: T
-            val secondsTaken = measureTime {
-                block().also { result = it }
-            }.inWholeSeconds.toDouble()
-            set(secondsTaken)
-            return result
-        }
     }
 
     /**
@@ -138,24 +119,6 @@ public class Gauge(
         return noLabelsChild?.get() ?: 0.0
     }
 
-    public inline fun <T> track(block: () -> T): T {
-        inc()
-        try {
-            return block()
-        } finally {
-            dec()
-        }
-    }
-
-    public fun <T> setDuration(block: () -> T): T{
-        val result: T
-        val secondsTaken = measureTime {
-            block().also { result = it }
-        }.inWholeSeconds.toDouble()
-        set(secondsTaken)
-        return result
-    }
-
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
         for ((labels, child) in childMetrics){
@@ -163,4 +126,41 @@ public class Gauge(
         }
         return familySamplesList(samples)
     }
+}
+
+public inline fun <T> Gauge.track(block: () -> T): T {
+    inc()
+    try {
+        return block()
+    } finally {
+        dec()
+    }
+}
+
+public inline fun <T> Gauge.Child.track(block: () -> T): T {
+    inc()
+    try {
+        return block()
+    } finally {
+        dec()
+    }
+}
+
+
+public fun <T> Gauge.setDuration(block: () -> T): T{
+    val result: T
+    val secondsTaken = measureTime {
+        block().also { result = it }
+    }.inWholeSeconds.toDouble()
+    set(secondsTaken)
+    return result
+}
+
+public fun <T> Gauge.Child.setDuration(block: () -> T): T{
+    val result: T
+    val secondsTaken = measureTime {
+        block().also { result = it }
+    }.inWholeSeconds.toDouble()
+    set(secondsTaken)
+    return result
 }

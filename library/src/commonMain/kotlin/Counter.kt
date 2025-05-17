@@ -10,9 +10,7 @@ public class Counter(
     public val includeCreatedSeries: Boolean = false,
 ) : SimpleCollector<Counter.Child>(fullName, help, labelNames, unit) {
     override val suffixes: Set<String> = setOf("_total")
-
     override val name: String = if(suffixes.any{ fullName.endsWith(it) }) fullName else fullName + "_total"
-
     override val type: Type = Type.COUNTER
 
     init {
@@ -32,42 +30,17 @@ public class Counter(
         }
 
         public fun inc(){
-            value += 1.0
+            inc(1.0)
         }
 
         public fun get(): Double = value
-
-        public fun <T> countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
-            return try {
-                block()
-            } catch (e: Throwable) {
-                if (exceptionTypes.isEmpty() || e::class in exceptionTypes) {
-                    inc()
-                }
-                null
-            }
-        }
     }
 
-    public fun inc(amount: Double): Unit? {
-        require(amount >= 0) { "Amount must be positive" }
-        return noLabelsChild?.inc(amount)
-    }
+    public fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
 
     public fun inc(): Unit? = noLabelsChild?.inc()
 
     public fun get(): Double = noLabelsChild?.get() ?: 0.0
-
-    public fun <T> countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
-        return try {
-            block()
-        } catch (e: Throwable) {
-            if (exceptionTypes.isEmpty() || e::class in exceptionTypes) {
-                inc()
-            }
-            null
-        }
-    }
 
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
@@ -79,5 +52,27 @@ public class Counter(
             }
         }
         return familySamplesList(samples)
+    }
+}
+
+public fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+    return try {
+        block()
+    } catch (e: Throwable) {
+        if (exceptionTypes.isEmpty() || e::class in exceptionTypes) {
+            inc()
+        }
+        null
+    }
+}
+
+public fun <T> Counter.Child.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+    return try {
+        block()
+    } catch (e: Throwable) {
+        if (exceptionTypes.isEmpty() || e::class in exceptionTypes) {
+            inc()
+        }
+        null
     }
 }

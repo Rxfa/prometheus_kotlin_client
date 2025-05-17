@@ -1,4 +1,5 @@
 import io.github.kotlin.fibonacci.Counter
+import io.github.kotlin.fibonacci.countExceptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

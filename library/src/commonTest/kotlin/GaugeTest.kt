@@ -1,5 +1,7 @@
 import io.github.kotlin.fibonacci.Gauge
 import io.github.kotlin.fibonacci.getCurrentSeconds
+import io.github.kotlin.fibonacci.setDuration
+import io.github.kotlin.fibonacci.track
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
