@@ -2,7 +2,11 @@ package io.github.kotlin.fibonacci
 
 import kotlin.reflect.KClass
 
-public class Counter(
+public fun counter(name: String, block: CounterBuilder.() -> Unit): Counter {
+    return CounterBuilder(name).apply(block).build()
+}
+
+public class Counter internal constructor(
     fullName: String,
     help: String,
     labelNames: List<String> = listOf(),

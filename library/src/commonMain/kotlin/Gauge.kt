@@ -3,7 +3,11 @@ package io.github.kotlin.fibonacci
 import kotlinx.datetime.Clock
 import kotlin.time.measureTime
 
-public class Gauge(
+public fun gauge(name: String, block: GaugeBuilder.() -> Unit): Gauge {
+    return GaugeBuilder(name).apply(block).build()
+}
+
+public class Gauge internal constructor(
     fullName: String,
     help: String,
     labelNames: List<String> = listOf(),
