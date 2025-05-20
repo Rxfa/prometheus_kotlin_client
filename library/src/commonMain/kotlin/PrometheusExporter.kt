@@ -1,8 +1,10 @@
 package io.github.kotlin.fibonacci
 
-class PrometheusExporter {
-    val registry = CollectorRegistry.defaultRegistry
-    private val parser = PrometheusTextFormat()
+public class PrometheusExporter {
+    public val registry: CollectorRegistry = CollectorRegistry.defaultRegistry
+    private val parser: PrometheusTextFormat = PrometheusTextFormat()
 
-    suspend fun scrape(withTimestamp: Boolean = false) = parser.writeMetrics(registry.collect(), withTimestamp)
+    public suspend fun scrape(withTimestamp: Boolean = false): String {
+        return parser.writeMetrics(registry.collect(), withTimestamp)
+    }
 }

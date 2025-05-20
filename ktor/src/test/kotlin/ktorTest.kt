@@ -1,12 +1,22 @@
+import io.github.kotlin.fibonacci.CollectorRegistry
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
+import kotlinx.coroutines.runBlocking
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
 class KtorTest{
+    @BeforeTest
+    fun clearMetrics() {
+        runBlocking {
+            CollectorRegistry.defaultRegistry.clear()
+        }
+    }
+
 
     @Test
     fun testKtorIntegration(){
@@ -31,12 +41,6 @@ class KtorTest{
             application {
                 installPrometheusMetrics()
             }
-
-            /**
-             * Requests to /metrics do not affect the metrics displayed so we need to make a call to a different
-             * endpoint.
-             */
-            client.get("/")
             val response = client.get("/metrics")
             val responseBody = response.bodyAsText()
             assertEquals(HttpStatusCode.OK, response.status)

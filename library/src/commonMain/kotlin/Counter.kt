@@ -1,16 +1,20 @@
 package io.github.kotlin.fibonacci
 
-class Counter(
+import kotlin.reflect.KClass
+
+public fun counter(name: String, block: CounterBuilder.() -> Unit): Counter {
+    return CounterBuilder(name).apply(block).build()
+}
+
+public class Counter internal constructor(
     fullName: String,
     help: String,
     labelNames: List<String> = listOf(),
     unit: String = "",
-    val includeCreatedSeries: Boolean = false,
+    public val includeCreatedSeries: Boolean = false,
 ) : SimpleCollector<Counter.Child>(fullName, help, labelNames, unit) {
     override val suffixes: Set<String> = setOf("_total")
-
     override val name: String = if(suffixes.any{ fullName.endsWith(it) }) fullName else fullName + "_total"
-
     override val type: Type = Type.COUNTER
 
     init {
@@ -21,29 +25,26 @@ class Counter(
         return Child()
     }
 
-    inner class Child {
+    public inner class Child {
         private var value = 0.0
 
-        fun inc(amount: Double) {
+        public fun inc(amount: Double) {
             require(amount >= 0) { "Value must be positive" }
             value += amount
         }
 
-        fun inc(){
-            value += 1.0
+        public fun inc(){
+            inc(1.0)
         }
 
-        fun get(): Double = value
+        public fun get(): Double = value
     }
 
-    fun inc(amount: Double): Unit? {
-        require(amount >= 0) { "Amount must be positive" }
-        return noLabelsChild?.inc(amount)
-    }
+    public fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
 
-    fun inc(): Unit? = noLabelsChild?.inc()
+    public fun inc(): Unit? = noLabelsChild?.inc()
 
-    fun get(): Double = noLabelsChild?.get() ?: 0.0
+    public fun get(): Double = noLabelsChild?.get() ?: 0.0
 
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
@@ -55,5 +56,27 @@ class Counter(
             }
         }
         return familySamplesList(samples)
+    }
+}
+
+public fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+    return try {
+        block()
+    } catch (e: Throwable) {
+        if (exceptionTypes.isEmpty() || e::class in exceptionTypes) {
+            inc()
+        }
+        null
+    }
+}
+
+public fun <T> Counter.Child.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+    return try {
+        block()
+    } catch (e: Throwable) {
+        if (exceptionTypes.isEmpty() || e::class in exceptionTypes) {
+            inc()
+        }
+        null
     }
 }

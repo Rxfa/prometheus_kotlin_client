@@ -6,12 +6,12 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 
-class CollectorRegistry {
+public class CollectorRegistry {
     private val mutex = Mutex()
     private val collectorNames = mutableSetOf<String>()
     private var collectors = listOf<Collector>()
 
-    suspend fun register(collector: Collector) {
+    public suspend fun register(collector: Collector) {
         val collectorName = collector.fullName
         val addedToRegistry = mutex.withLock { collectorNames.add(collectorName) }
         if (!addedToRegistry) {
@@ -20,7 +20,7 @@ class CollectorRegistry {
         mutex.withLock { this.collectors += collector }
     }
 
-    suspend fun unregister(collector: Collector) {
+    public suspend fun unregister(collector: Collector) {
         val collectorName = collector.fullName
         mutex.withLock {
             if(this.collectorNames.contains(collectorName)) {
@@ -30,22 +30,22 @@ class CollectorRegistry {
         }
     }
 
-    suspend fun clear() {
+    public suspend fun clear() {
         mutex.withLock {
             this.collectors = listOf()
             this.collectorNames.clear()
         }
     }
 
-    suspend fun collect(): List<Collector> {
+    public suspend fun collect(): List<Collector> {
         return withContext(Dispatchers.Default) { getCollectors() }
     }
 
-    companion object {
-        val defaultRegistry = CollectorRegistry()
+    public companion object {
+        public val defaultRegistry: CollectorRegistry = CollectorRegistry()
     }
 
-    suspend fun getCollectors(): List<Collector> {
+    public suspend fun getCollectors(): List<Collector> {
         return mutex.withLock { collectors.toList() }
     }
 }

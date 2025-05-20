@@ -1,4 +1,5 @@
 import io.github.kotlin.fibonacci.Counter
+import io.github.kotlin.fibonacci.countExceptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -28,13 +29,13 @@ class CounterTest {
 
     @Test
     fun `counter with labels starts on zero`(){
-        val counter = Counter("requests_total", "Total number of requests.", listOf("Method")).labels("get")
+        val counter = Counter("requests_total", "Total number of requests.", listOf("method")).labels("get")
         assertEquals(0.0, counter.get())
     }
 
     @Test
     fun `counter with labels increments correctly`(){
-        val counter = Counter("requests_total", "Total number of requests.", listOf("Method"))
+        val counter = Counter("requests_total", "Total number of requests.", listOf("method"))
         val getCounter = counter.labels("GET")
         val postCounter = counter.labels("POST")
 
@@ -49,5 +50,53 @@ class CounterTest {
     fun `counter with labels increment with negative value throws exception`(){
         val counterWithLabel = Counter("requests_total", "Total number of requests.", listOf("method")).labels("get")
         assertFailsWith<IllegalArgumentException>{counterWithLabel.inc(-1.0)}
+    }
+
+    @Test
+    fun `counter can count exceptions raised in a given piece of code`(){
+        val counter = Counter("requests_total", "Total number of requests.")
+        counter.countExceptions<Any>{
+            throw IllegalArgumentException()
+        }
+        counter.countExceptions<Any>{
+            throw IllegalStateException()
+        }
+        assertEquals(2.0, counter.get())
+    }
+
+    @Test
+    fun `counter with labels can count exceptions raised in a given piece of code`(){
+        val counter = Counter("requests_total", "Total number of requests.", listOf("method")).labels("GET")
+        counter.countExceptions<Any>{
+            throw IllegalArgumentException()
+        }
+        counter.countExceptions<Any>{
+            throw IllegalStateException()
+        }
+        assertEquals(2.0, counter.get())
+    }
+
+    @Test
+    fun `counter can count specific exceptions raised in a given piece of code`(){
+        val counter = Counter("requests_total", "Total number of requests.")
+        counter.countExceptions<Any>(IllegalArgumentException::class){
+            throw IllegalArgumentException()
+        }
+        counter.countExceptions<Any>(IllegalStateException::class){
+            throw IllegalArgumentException()
+        }
+        assertEquals(1.0, counter.get())
+    }
+
+    @Test
+    fun `counter with labels can count specific exceptions raised in a given piece of code`(){
+        val counter = Counter("requests_total", "Total number of requests.", listOf("method")).labels("GET")
+        counter.countExceptions<Any>(IllegalArgumentException::class){
+            throw IllegalArgumentException()
+        }
+        counter.countExceptions<Any>(IllegalStateException::class){
+            throw IllegalArgumentException()
+        }
+        assertEquals(1.0, counter.get())
     }
 }
