@@ -14,4 +14,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "multiplatform-library-template"
-include(":library",":benchmarks")
+include(":library")
+include(":benchmarks")
+include(":ktor")
+include(":example")

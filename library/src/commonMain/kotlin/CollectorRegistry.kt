@@ -23,7 +23,7 @@ class CollectorRegistry {
     }
 
     suspend fun unregister(collector: Collector) {
-        val collectorName = collector.getClassName()
+        val collectorName = collector.fullName
         mutex.withLock {
             if(this.collectorNames.contains(collectorName)) {
                 this.collectors -= collector
