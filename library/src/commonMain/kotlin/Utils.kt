@@ -10,7 +10,9 @@ public fun getCurrentSeconds(clock: Clock = Clock.System): Long {
     return clock.now().epochSeconds
 }
 
-public expect fun Collector.getClassName(): String
+public fun Collector.getClassName(): String {
+    return this::class.simpleName!!
+}
 
 public fun doubleQuoteString(s: String): String = when{
     s.startsWith("\"") && s.endsWith("\"") -> s
