@@ -1,0 +1,144 @@
+% Classe do documento e parâmetros gerais.
+\documentclass[a4paper,openright,twoside,11pt]{report}
+
+% Packages utilizadas e respetivos parâmetros.
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\usepackage{lipsum} % gerador de texto
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage[Algoritmo]{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\renewcommand{\algorithmicrequire}{\textbf{Dados: }}
+\renewcommand{\algorithmicensure}{\textbf{Resultado: }}
+
+% Definições das dimensões das páginas
+\setlength{\textheight}{24.00cm}
+\setlength{\textwidth}{15.50cm}
+\setlength{\topmargin}{0.35cm}
+\setlength{\headheight}{0cm}
+\setlength{\headsep}{0cm}
+\setlength{\oddsidemargin}{0.25cm}
+\setlength{\evensidemargin}{0.25cm}
+
+%\renewcommand{\baselinestretch}{1}
+
+% Página inicial (capa)
+\title{
+    \vspace{-50mm}
+    \begin{minipage}[l]{\textwidth}
+        \hspace{-20mm}\resizebox{75mm}{!}{\includegraphics{./figures/logoISELnew2}}\\
+    \end{minipage}\\[20mm]
+    {\Huge \textbf{Krometheus}}\\[3mm]
+    {\Large A Prometheus Kotlin client library}\\[10mm]
+}
+
+% Nome dos autores (um por linha)
+\author{
+    \begin{tabular}{ll}
+        & Mário Carvalho \\
+        & Rafael Nicolau \\[50mm]
+    \end{tabular}}
+
+\date{
+    \begin{tabular}{ll}
+    {Supervisor:}
+        & José Simão \\
+    \end{tabular}\\[10mm]
+% Deixar o indicador respetivo em função da versão do relatório.
+    Final report written for Project and Seminary\\
+    BSc in Computer Science and Computer Engineering\\[20mm]
+    June 2025}
+
+
+\begin{document}
+    \thispagestyle{empty}
+    \maketitle
+
+    \baselineskip 18pt % line spacing: 12pt for single, 18pt for 1 1/2, and 24pt for double spacing
+
+    \newpage
+    \thispagestyle{empty}
+% Fim da contracapa
+
+% Página com identificação completa (número e nome) e assinaturas do(s) estudante(s) e do(s) orientador(es)
+    \cleardoublepage
+    \setcounter{page}{1}
+    \begin{center}
+        \textsc{\LARGE Instituto Superior de Engenharia de Lisboa}\\[50mm]
+
+        {\Huge \textbf{Krometheus}}\\[3mm]
+        {\Large A Prometheus Kotlin client library}\\[10mm]
+        \begin{tabular}{rl}
+            XXXXX & Mário Rijo Antunes Carvalho\\[10mm]
+            & \rule{75mm}{0.5pt}\\[5mm]
+            50546 & Rafael Sebastião Matias Nicolau\\[10mm]
+            & \rule{75mm}{0.5pt}              \\
+        \end{tabular}\\[10mm]
+
+        \begin{tabular}{rl}
+            Supervisor: & José Manuel de Campos Lages Garcia Simão\\[10mm]
+            & \rule{75mm}{0.5pt}\\[5mm]
+        \end{tabular}\\[10mm]
+
+        Final report written for Project and Seminary\\
+        BSc in Computer Science and Computer Engineering\\[20mm]
+        June 2025\\
+    \end{center}
+
+% Página de resumo em ingles
+    \cleardoublepage
+    \chapter*{Abstract}
+    \lipsum[1]
+
+    {\textbf Keywords:}
+
+%% Página de agradecimentos
+    \cleardoublepage
+    \chapter*{Acknowledgments}
+    \lipsum[1]
+
+% Geração do índice de conteúdos
+    \cleardoublepage
+    \tableofcontents \cleardoublepage
+
+% Geração do índice de figuras e de tabelas
+    \listoffigures \cleardoublepage
+    \listoftables \cleardoublepage
+    \listofacronyms \cleardoublepage
+
+% Chapter 1
+    \include{introduction}
+
+% Chapter 2
+    \include{background}
+
+% Chapter 3
+    \include{problem}
+
+% Chapter 4
+    \include{architecture}
+
+% Chapter 5
+    \include{implementation}
+
+% Chapter 6
+    \include{evaluation}
+
+% Chapter 7
+    \include{future}
+
+% Chapter 8
+    \include{conclusion}
+
+% References
+    \bibliographystyle{unsrt}
+    \bibliography{refs}
+    \addcontentsline{toc}{chapter}{References}
+
+    \appendix
+    \include{appendix}
+
+\end{document} 
