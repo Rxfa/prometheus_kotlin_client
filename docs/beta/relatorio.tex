@@ -91,9 +91,19 @@
 % Página de resumo em ingles
     \cleardoublepage
     \chapter*{Abstract}
-    \lipsum[1]
+    The growing complexity of modern software systems—driven by the adoption of distributed architectures, microservices, and asynchronous execution—has made observability a critical aspect of system design.
+    Among its key components, metrics-based monitoring enables developers and operators to track the internal state and performance of applications and infrastructure.
+    Prometheus has become a widely used standard for collecting and querying metrics; however, its official client libraries primarily target languages such as Go, Python, and Java.
+    These implementations do not offer idiomatic support for Kotlin, its coroutine-based concurrency model, or
+    Kotlin-specific frameworks like Ktor.\\
 
-    {\textbf Keywords:}
+    This project presents a Prometheus client library implemented in Kotlin, designed with coroutine safety, expressiveness, and alignment with Kotlin's language features in mind.
+    The library supports core Prometheus metric types and provides a straightforward and testable interface for instrumenting Kotlin applications.
+    This report details the motivation for the project, its design and architecture, the implementation process, and an evaluation of the resulting system.
+    The library fills an existing gap in the Kotlin ecosystem by offering a native and idiomatic solution for
+    integrating metrics-based observability.\\
+
+    {\textbf{Keywords}: Observability, Prometheus, Metrics, Monitoring.}
 
 %% Página de agradecimentos
     \cleardoublepage
