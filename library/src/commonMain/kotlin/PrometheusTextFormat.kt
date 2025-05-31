@@ -1,7 +1,7 @@
 package io.github.kotlin.fibonacci
 
-class PrometheusTextFormat {
-    fun writeMetrics(collectors: List<Collector>, withTimestamp: Boolean = false): String {
+public class PrometheusTextFormat {
+    public fun writeMetrics(collectors: List<Collector>, withTimestamp: Boolean = false): String {
         val stringBuilder = StringBuilder()
         for (collector in collectors) {
             stringBuilder.writeMetricMetadata(collector)
@@ -31,9 +31,5 @@ class PrometheusTextFormat {
                 this.append("${sample.name}$labels ${sample.value}\n")
             }
         }
-    }
-
-    companion object {
-        const val CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
     }
 }
