@@ -11,6 +11,7 @@
 \usepackage[Algoritmo]{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
+\usepackage[printonlyused]{acronym}
 \renewcommand{\algorithmicrequire}{\textbf{Dados: }}
 \renewcommand{\algorithmicensure}{\textbf{Resultado: }}
 
@@ -91,7 +92,8 @@
 % Página de resumo em ingles
     \cleardoublepage
     \chapter*{Abstract}
-    The growing complexity of modern software systems—driven by the adoption of distributed architectures, microservices, and asynchronous execution—has made observability a critical aspect of system design.
+    The growing complexity of modern software systems, driven by the adoption of distributed architectures,
+    microservices, and asynchronous execution—has made observability a critical aspect of system design.
     Among its key components, metrics-based monitoring enables developers and operators to track the internal state and performance of applications and infrastructure.
     Prometheus has become a widely used standard for collecting and querying metrics; however, its official client libraries primarily target languages such as Go, Python, and Java.
     These implementations do not offer idiomatic support for Kotlin, its coroutine-based concurrency model, or
@@ -109,6 +111,16 @@
     \cleardoublepage
     \chapter*{Acknowledgments}
     \lipsum[1]
+    \vspace{2em}
+    \begin{flushright}
+        Rafael Nicolau
+    \end{flushright}
+
+    \lipsum[1]
+    \vspace{2em}
+    \begin{flushright}
+        Mário Carvalho
+    \end{flushright}
 
 % Geração do índice de conteúdos
     \cleardoublepage
@@ -117,38 +129,38 @@
 % Geração do índice de figuras e de tabelas
     \listoffigures \cleardoublepage
     \listoftables \cleardoublepage
-    \listofacronyms \cleardoublepage
+    \input{/home/rxfa/Desktop/school/PS/docs/beta/acronyms} \cleardoublepage
 
 % Chapter 1
-    \include{introduction}
+    \include{/home/rxfa/Desktop/school/PS/docs/beta/introduction}
 
 % Chapter 2
-    \include{background}
+    \include{/home/rxfa/Desktop/school/PS/docs/beta/background}
 
 % Chapter 3
-    \include{problem}
+    \include{/home/rxfa/Desktop/school/PS/docs/beta/problem}
 
 % Chapter 4
-    \include{architecture}
+    \include{/home/rxfa/Desktop/school/PS/docs/beta/architecture}
 
 % Chapter 5
-    \include{implementation}
+    \include{/home/rxfa/Desktop/school/PS/docs/beta/implementation}
 
 % Chapter 6
-    \include{evaluation}
+    \include{/home/rxfa/Desktop/school/PS/docs/beta/evaluation}
 
 % Chapter 7
-    \include{future}
+    \include{/home/rxfa/Desktop/school/PS/docs/beta/future}
 
 % Chapter 8
-    \include{conclusion}
+    \include{/home/rxfa/Desktop/school/PS/docs/beta/conclusion}
 
 % References
-    \bibliographystyle{unsrt}
-    \bibliography{refs}
+    \bibliographystyle{plain}
+    \bibliography{/home/rxfa/Desktop/school/PS/docs/beta/refs}
     \addcontentsline{toc}{chapter}{References}
 
     \appendix
-    \include{appendix}
+    \include{/home/rxfa/Desktop/school/PS/docs/beta/appendix}
 
 \end{document} 
