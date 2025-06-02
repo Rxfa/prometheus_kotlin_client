@@ -12,6 +12,8 @@
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
 \usepackage[printonlyused]{acronym}
+\usepackage{listings}
+\usepackage{hyperref}
 \renewcommand{\algorithmicrequire}{\textbf{Dados: }}
 \renewcommand{\algorithmicensure}{\textbf{Resultado: }}
 
@@ -129,38 +131,38 @@
 % Geração do índice de figuras e de tabelas
     \listoffigures \cleardoublepage
     \listoftables \cleardoublepage
-    \input{/home/rxfa/Desktop/school/PS/docs/beta/acronyms} \cleardoublepage
+    \input{acronyms} \cleardoublepage
 
 % Chapter 1
-    \include{/home/rxfa/Desktop/school/PS/docs/beta/introduction}
+    \include{introduction}
 
 % Chapter 2
-    \include{/home/rxfa/Desktop/school/PS/docs/beta/background}
+    \include{background}
 
 % Chapter 3
-    \include{/home/rxfa/Desktop/school/PS/docs/beta/problem}
+    \include{problem}
 
 % Chapter 4
-    \include{/home/rxfa/Desktop/school/PS/docs/beta/architecture}
+    \include{architecture}
 
 % Chapter 5
-    \include{/home/rxfa/Desktop/school/PS/docs/beta/implementation}
+    \include{implementation}
 
 % Chapter 6
-    \include{/home/rxfa/Desktop/school/PS/docs/beta/evaluation}
+    \include{evaluation}
 
 % Chapter 7
-    \include{/home/rxfa/Desktop/school/PS/docs/beta/future}
+    \include{future}
 
 % Chapter 8
-    \include{/home/rxfa/Desktop/school/PS/docs/beta/conclusion}
+    \include{conclusion}
 
 % References
     \bibliographystyle{plain}
-    \bibliography{/home/rxfa/Desktop/school/PS/docs/beta/refs}
+    \bibliography{refs}
     \addcontentsline{toc}{chapter}{References}
 
     \appendix
-    \include{/home/rxfa/Desktop/school/PS/docs/beta/appendix}
+    \include{appendix}
 
 \end{document} 
