@@ -1,6 +1,7 @@
 package counter
 
 import io.github.kotlin.fibonacci.Counter
+import io.github.kotlin.fibonacci.counter
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -19,7 +20,10 @@ open class KotlinClientCounter {
     @Setup(Level.Trial)
     fun setup() {
         scope = CoroutineScope(Dispatchers.Default)
-        counter = Counter("test_total", "Test counter")
+
+        counter = counter("test_total")  {
+            help("Test counter")
+        }
         incChannel = Channel(capacity = 1024, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
         scope.launch {

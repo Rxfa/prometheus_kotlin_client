@@ -121,26 +121,6 @@ class GaugeTest {
     }
 
     @Test
-    fun `Gauge Decrements are Thread safe`(){
-        runTest{
-            val reps = 100
-            val parl = 1000
-            val gauge = Gauge(validFullName, validHelpText)
-            coroutineScope {
-                List(parl) {
-                    async {
-                        repeat(reps) {
-                            gauge.dec()
-                        }
-                    }
-                }.awaitAll()
-            }
-            assertEquals(-reps * parl.toDouble(), gauge.get())
-        }
-
-    }
-
-    @Test
     fun `Gauge can track in-progress requests in a given piece of code`(){
         runTest {
             val gauge = Gauge(validFullName, validHelpText)
@@ -148,12 +128,13 @@ class GaugeTest {
 
             val job = launch {
                 gauge.track {
+
                     assertEquals(1.0, gauge.get(), "Gauge should be incremented during operation")
                     signal.receive()
                     assertEquals(1.0, gauge.get(), "Gauge should remain incremented before leaving block")
                 }
             }
-
+            delay(1000)
             yield()
             assertEquals(1.0, gauge.get())
             signal.send(Unit)
@@ -175,7 +156,7 @@ class GaugeTest {
                     assertEquals(1.0, gauge.get(), "Gauge should remain incremented before leaving block")
                 }
             }
-
+            delay(1000)
             yield()
             assertEquals(1.0, gauge.get())
             signal.send(Unit)
@@ -232,5 +213,26 @@ class GaugeTest {
                 assertTrue(gauge.get() <= 1.0)
             }
         }
+    }
+
+
+    @Test
+    fun `Gauge Decrements are Thread safe`(){
+        runTest{
+            val reps = 100
+            val parl = 1000
+            val gauge = Gauge(validFullName, validHelpText)
+            coroutineScope {
+                List(parl) {
+                    async {
+                        repeat(reps) {
+                            gauge.dec()
+                        }
+                    }
+                }.awaitAll()
+            }
+            assertEquals(-reps * parl.toDouble(), gauge.get())
+        }
+
     }
 }

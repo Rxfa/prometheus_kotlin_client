@@ -1,6 +1,7 @@
 package gauge
 import io.github.kotlin.fibonacci.Counter
 import io.github.kotlin.fibonacci.Gauge
+import io.github.kotlin.fibonacci.gauge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -24,7 +25,9 @@ open class KotlinClientGauge {
     @Setup
     fun setup(){
         scope = CoroutineScope(Dispatchers.Default)
-        gauge = Gauge("test_gauge","Test Gauge")
+        gauge = gauge("test_gauge") {
+            help("Test gauge")
+        }
         incChannel = Channel(capacity = 1024, onBufferOverflow = BufferOverflow.DROP_OLDEST)
         decChannel = Channel(capacity = 1024, onBufferOverflow = BufferOverflow.DROP_OLDEST)
         setChannel = Channel(capacity = 1024, onBufferOverflow = BufferOverflow.DROP_OLDEST)

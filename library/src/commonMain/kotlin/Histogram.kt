@@ -3,7 +3,7 @@ package io.github.kotlin.fibonacci
 import kotlinx.atomicfu.atomic
 import kotlinx.datetime.Clock
 
-class Histogram(
+public class Histogram(
     fullName: String,
     help: String,
     labelNames: List<String> = emptyList(),
@@ -43,7 +43,7 @@ class Histogram(
         return Child()
     }
 
-    inner class Child {
+    public inner class Child {
         private val bucketCounts: MutableMap<Double, Long> = mutableMapOf()
         private var sum = atomic(0.0)
         private var count = atomic(0L)
@@ -55,7 +55,7 @@ class Histogram(
             }
         }
 
-        fun observe(value: Double) {
+        public fun observe(value: Double) {
             for (bucket in sortedBuckets) {
                 if (value <= bucket) {
                     bucketCounts[bucket] = (bucketCounts[bucket] ?: 0) + 1
@@ -63,20 +63,20 @@ class Histogram(
             }
         }
 
-        fun getBuckets(): Double {
+        public fun getBuckets(): Double {
             TODO()
         }
 
-        fun created(): Long {
+        public fun created(): Long {
             TODO()
         }
     }
 
-    fun observe(value: Double): Unit? {
+    public fun observe(value: Double): Unit? {
         TODO()
     }
 
-    fun get(): Double {
+    public fun get(): Double {
         TODO()
     }
 

@@ -7,7 +7,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-
+/*
 class Buffer {
     //TODO(nned  to )
     private val bufferActiveBit = 1L shl 63
@@ -93,3 +93,5 @@ class Buffer {
     }
 
 }
+
+ */
