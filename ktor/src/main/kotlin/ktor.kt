@@ -1,6 +1,6 @@
 import io.github.kotlin.fibonacci.CollectorRegistry
-import io.github.kotlin.fibonacci.Counter
 import io.github.kotlin.fibonacci.PrometheusExporter
+import io.github.kotlin.fibonacci.counter
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
@@ -21,21 +21,18 @@ fun Application.installPrometheusMetrics(exporter: PrometheusExporter = Promethe
 }
 
 private class KtorMetrics(private val registry: CollectorRegistry) {
-    private val totalRequests = Counter(
-        "http_requests_total",
-        "Total HTTP requests received",
-        listOf("method", "path")
-    )
-    private val totalErrors = Counter(
-        "http_requests_errors_total",
-        "Total HTTP requests errors",
-        listOf("method", "status_code", "path")
-    )
-    private val totalExceptions = Counter(
-        "http_exceptions_total",
-        "Total HTTP exceptions",
-        listOf("method", "path", "exception_class")
-    )
+    private val totalRequests = counter("http_requests_total") {
+        help("Total HTTP requests received")
+        labelNames("method", "path")
+    }
+    private val totalErrors = counter("http_requests_errors_total") {
+        help("Total HTTP requests errors")
+        labelNames("method", "status_code", "path")
+    }
+    private val totalExceptions = counter("http_exceptions_total") {
+        help("Total HTTP exceptions")
+        labelNames("method", "path", "exception_class")
+    }
 
     init {
         runBlocking {

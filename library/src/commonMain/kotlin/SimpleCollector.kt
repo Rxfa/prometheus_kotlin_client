@@ -3,7 +3,7 @@ package io.github.kotlin.fibonacci
 /**
  * Common functionality for the metric types supported by prometheus.
  */
-abstract class SimpleCollector<Child>(
+public abstract class SimpleCollector<Child>(
     fullName: String,
     help: String,
     labelNames: List<String>,
@@ -18,21 +18,21 @@ abstract class SimpleCollector<Child>(
     protected var noLabelsChild: Child? = null
     protected abstract val suffixes: Set<String>
 
-    fun labels(vararg labelValues: String): Child {
+    public fun labels(vararg labelValues: String): Child {
         require(labelValues.size == labelNames.size) { "Incorrect number of labels." }
         require(labelValues.all { it.isNotEmpty() }) { "Label cannot be blank." }
         val key = labelValues.asList()
         return childMetrics.getOrPut(key) { newChild() }
     }
 
-    abstract fun newChild(): Child
+    public abstract fun newChild(): Child
 
-    fun remove(vararg labelValues: String) {
+    public fun remove(vararg labelValues: String) {
         childMetrics.remove(labelValues.toList())
         initializeNoLabelsChild()
     }
 
-    fun clear(){
+    public fun clear(){
         childMetrics.clear()
         initializeNoLabelsChild()
     }

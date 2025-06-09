@@ -1,16 +1,22 @@
 package io.github.kotlin.fibonacci
 
+import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class Counter(
+
+public fun counter(name: String, block: CounterBuilder.() -> Unit): Counter {
+    return CounterBuilder(name).apply(block).build()
+}
+
+public class Counter internal constructor(
     fullName: String,
     help: String,
     labelNames: List<String> = listOf(),
     unit: String = "",
-    val includeCreatedSeries: Boolean = false,
+    public val includeCreatedSeries: Boolean = false,
 ) : SimpleCollector<Counter.Child>(fullName, help, labelNames, unit) {
     override val suffixes: Set<String> = setOf("_total")
 
@@ -26,12 +32,10 @@ class Counter(
         return Child()
     }
 
-    inner class Child {
-        //TODO(WOULD BE MORE EFFICIENT UDSING JAVA ADDERS)
-        //TODO(LOOK IF @PublishedApi is worthit)
+    public inner class Child {
         private var value = atomic(0.0.toRawBits())
 
-        suspend fun inc(amount: Double) {
+        public suspend fun inc(amount: Double) {
             require(amount >= 0) { "Value must be positive" }
             withContext(Dispatchers.Default){
                  value.updateAndGet { currentBits ->
@@ -42,22 +46,18 @@ class Counter(
             }
         }
 
-        suspend fun inc(){
+        public suspend fun inc(){
             inc(1.0)
         }
 
-        fun get(): Double = Double.fromBits(value.value)
-
+        public fun get(): Double =  Double.fromBits(value.value)
     }
 
-    suspend fun inc(amount: Double): Unit? {
-        require(amount >= 0) { "Amount must be positive" }
-        return noLabelsChild?.inc(amount)
-    }
+    public suspend fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
 
-    suspend fun inc(): Unit? = noLabelsChild?.inc()
+    public suspend fun inc(): Unit? = noLabelsChild?.inc()
 
-    fun get(): Double = noLabelsChild?.get() ?: 0.0
+    public fun get(): Double = noLabelsChild?.get() ?: 0.0
 
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
@@ -69,5 +69,27 @@ class Counter(
             }
         }
         return familySamplesList(samples)
+    }
+}
+
+public suspend fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+    return try {
+        block()
+    } catch (e: Throwable) {
+        if (exceptionTypes.isEmpty() || e::class in exceptionTypes) {
+            inc()
+        }
+        null
+    }
+}
+
+public suspend fun <T> Counter.Child.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+    return try {
+        block()
+    } catch (e: Throwable) {
+        if (exceptionTypes.isEmpty() || e::class in exceptionTypes) {
+            inc()
+        }
+        null
     }
 }

@@ -13,7 +13,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "multiplatform-library-template"
+rootProject.name = "prometheus-kotlin-client"
 include(":library")
 include(":benchmarks")
 include(":ktor")

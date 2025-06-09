@@ -4,3 +4,9 @@ plugins {
     alias(libs.plugins.vanniktech.mavenPublish) apply false
     alias(libs.plugins.jmh) apply false
 }
+
+tasks.register("testAll") {
+    group = "verification"
+    description = "Runs tests on all subprojects"
+    dependsOn(subprojects.map { it.tasks.named("test") })
+}

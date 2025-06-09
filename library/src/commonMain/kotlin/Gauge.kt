@@ -6,8 +6,13 @@ import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
+import kotlin.time.measureTime
 
-class Gauge(
+public fun gauge(name: String, block: GaugeBuilder.() -> Unit): Gauge {
+    return GaugeBuilder(name).apply(block).build()
+}
+
+public class Gauge internal constructor(
     fullName: String,
     help: String,
     labelNames: List<String> = listOf(),
@@ -28,10 +33,13 @@ class Gauge(
     }
 
 
-    inner class Child(){
+    public inner class Child {
         private var value = atomic(0.0.toRawBits())
 
-        suspend fun inc(amount: Double){
+        /**
+         * Increment the gauge by the given amount.
+         */
+        public suspend fun inc(amount: Double){
             require(amount >= 0) { "Increment must be non-negative" }
             withContext(Dispatchers.Default){
                 value.updateAndGet { currentBits ->
@@ -45,14 +53,14 @@ class Gauge(
         /**
          * Increment the gauge by 1.
          */
-        suspend fun inc(){
+        public suspend fun inc(){
             inc(1.0)
         }
 
         /**
          * Decrement the Gauge by the given amount.
          */
-        suspend fun dec(amount: Double){
+        public suspend fun dec(amount: Double){
             require(amount >= 0) { "Decrement must be non-negative" }
             withContext(Dispatchers.Default){
                 value.updateAndGet { currentBits ->
@@ -66,76 +74,75 @@ class Gauge(
         /**
          * Decrement the gauge by 1.
          */
-        suspend fun dec(){
+        public suspend fun dec(){
             dec(1.0)
         }
 
         /**
          * Set the gauge to the given value.
          */
-        suspend fun set(amount: Double) {
+        public suspend fun set(amount: Double) {
             withContext(Dispatchers.Default) {
                 value.value = amount.toRawBits()
             }
         }
 
-
         /**
          * Set the gauge to the current unixtime in seconds.
          */
-        suspend fun setToCurrentTime(){
+        public suspend fun setToCurrentTime(){
             withContext(Dispatchers.Default){
                 value.value = getCurrentSeconds(clock).toDouble().toRawBits()
             }
 
         }
 
-        fun get(): Double = Double.fromBits(value.value)
+        public fun get(): Double = Double.fromBits(value.value)
     }
 
     /**
      * Increment the gauge by 1.
      */
-    suspend fun inc(){
+    public suspend fun inc(){
         noLabelsChild?.inc()
     }
 
     /**
      * Increment the gauge by the given amount.
      */
-    suspend fun inc(amount: Double){
+    public suspend fun inc(amount: Double){
         noLabelsChild?.inc(amount)
     }
 
     /**
      * Decrement the gauge by 1.
      */
-    suspend fun dec(){
+    public suspend fun dec(){
         noLabelsChild?.dec()
     }
 
     /**
      * Decrement the Gauge by the given amount.
      */
-    suspend fun dec(amount: Double){
+    public suspend fun dec(amount: Double){
         noLabelsChild?.dec(amount)
     }
 
     /**
      * Set the gauge to the given value.
      */
-    suspend fun set(amount: Double){
+    public suspend fun set(amount: Double){
         noLabelsChild?.set(amount)
     }
 
     /**
      * Set the gauge to the current unixtime in seconds.
      */
-    suspend fun setToCurrentTime() {
+    public suspend fun setToCurrentTime() {
         noLabelsChild?.setToCurrentTime()
     }
 
-    fun get(): Double {
+    public fun get(): Double {
         return noLabelsChild?.get() ?: 0.0
     }
 
@@ -146,4 +153,41 @@ class Gauge(
         }
         return familySamplesList(samples)
     }
+}
+
+public suspend inline fun <T> Gauge.track(block: () -> T): T {
+    inc()
+    try {
+        return block()
+    } finally {
+        dec()
+    }
+}
+
+public suspend inline fun <T> Gauge.Child.track(block: () -> T): T {
+    inc()
+    try {
+        return block()
+    } finally {
+        dec()
+    }
+}
+
+
+public suspend fun <T> Gauge.setDuration(block: () -> T): T{
+    val result: T
+    val secondsTaken = measureTime {
+        block().also { result = it }
+    }.inWholeSeconds.toDouble()
+    set(secondsTaken)
+    return result
+}
+
+public suspend fun <T> Gauge.Child.setDuration(block: () -> T): T{
+    val result: T
+    val secondsTaken = measureTime {
+        block().also { result = it }
+    }.inWholeSeconds.toDouble()
+    set(secondsTaken)
+    return result
 }
