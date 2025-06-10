@@ -1,8 +1,8 @@
-package com.example.metrics
+package io.github.rxfa.prometheus.ktor
 
-import io.github.kotlin.fibonacci.CollectorRegistry
-import io.github.kotlin.fibonacci.PrometheusExporter
-import io.github.kotlin.fibonacci.counter
+import io.github.rxfa.prometheus.core.CollectorRegistry
+import io.github.rxfa.prometheus.core.PrometheusExporter
+import io.github.rxfa.prometheus.core.counter
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*

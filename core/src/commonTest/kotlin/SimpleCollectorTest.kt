@@ -1,4 +1,4 @@
-import io.github.kotlin.fibonacci.SimpleCollector
+import io.github.rxfa.prometheus.core.SimpleCollector
 import kotlin.test.*
 
 class SimpleCollectorTest {

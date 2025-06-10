@@ -1,4 +1,4 @@
-import io.github.kotlin.fibonacci.doubleQuoteString
+import io.github.rxfa.prometheus.core.doubleQuoteString
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
