@@ -1,6 +1,12 @@
 package io.github.kotlin.fibonacci
 
+import io.github.kotlin.fibonacci.exemplars.Exemplar
+import io.github.kotlin.fibonacci.exemplars.HistogramExemplarSample
+import kotlinx.atomicfu.AtomicLong
+import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.updateAndGet
+import kotlinx.coroutines.Runnable
 import kotlinx.datetime.Clock
 import kotlin.math.pow
 
@@ -41,6 +47,12 @@ public fun exponentialHistogramBuckets(
     return HistogramBuilder(name, buckets).apply(block).build()
 }
 
+public data class Value(
+    public val sum: Double,
+    public val buckets: List<Double>,
+    public val created: Long
+)
+
 
 public class Histogram internal constructor(
     fullName: String,
@@ -56,9 +68,11 @@ public class Histogram internal constructor(
     override val type: Type = Type.HISTOGRAM
 
     private var sortedBuckets: List<Double> = buckets
+    private var examplersEnabled: Boolean = false
+    private var exemplarSampler: HistogramExemplarSample? = null
 
     override fun newChild(): Child {
-        return Child()
+        return Child(sortedBuckets,examplersEnabled,exemplarSampler)
     }
 
     init {
@@ -111,9 +125,7 @@ public class Histogram internal constructor(
 
     public inner class Child {
         private val bucketCounts: MutableMap<Double, Long> = mutableMapOf()
-        private var sum = atomic(0.0)
         private var count = atomic(0L)
-        private val created: Long = Clock.System.now().toEpochMilliseconds()
 
         init {
             for (bucket in sortedBuckets) {
@@ -121,38 +133,145 @@ public class Histogram internal constructor(
             }
         }
 
+        public fun startTimer():Timer{
+            return Timer(this, Clock.System.now().toEpochMilliseconds())
+        }
+
+        public fun time(runnable: Runnable):Double{
+            return timeWithExemplar(runnable, listOf())
+        }
+
+        public fun timeWithExemplar(runnable: Runnable, exemplarLabels: List<String>): Double {
+            val start = startTimer()
+            val final: Double;
+            try {
+                runnable.run()
+            }catch (e: Exception) {
+                throw RuntimeException("Error while running timed block", e)
+            } finally {
+                final = start.observeDurationWithExemplar(exemplarLabels)
+            }
+            return final
+        }
+
+        public constructor(buckets: List<Double>,
+                            exemplarsEnabled: Boolean = false,
+                            exemplarSampler: HistogramExemplarSample? = null) {
+            this.upperBounds = buckets
+            this.exemplarsEnabled = exemplarsEnabled
+            this.exemplarSampler = exemplarSampler
+            this.exemplars = mutableListOf<AtomicRef<Exemplar>>()
+            this.cumulativeCounts = mutableListOf<AtomicLong>()
+            for (i in buckets.indices) {
+                cumulativeCounts.add(atomic(0.0.toRawBits()))
+                exemplars.add(atomic(Exemplar(emptyList(), 0.0)))
+            }
+        }
+        private final val upperBounds: List<Double>
+        private final val exemplarsEnabled: Boolean
+        private final val exemplars: MutableList<AtomicRef<Exemplar>>
+        private final val exemplarSampler: HistogramExemplarSample?
+        private final val cumulativeCounts: MutableList<AtomicLong>
+        private final val sum = atomic(0.0.toRawBits())
+        private final val created = Clock.System.now().toEpochMilliseconds()
+
+
+
         public fun observe(value: Double) {
-            for (bucket in sortedBuckets) {
-                if (value <= bucket) {
-                    bucketCounts[bucket] = (bucketCounts[bucket] ?: 0) + 1
+            observeWithExemplar(value, null)
+        }
+
+        public fun observeWithExemplar(value: Double, exemplarLabels: List<String>?){
+            val exemplar = exemplarLabels ?.let {
+                if (exemplarsEnabled) {
+                   Exemplar(exemplarLabels,value, Clock.System.now().toEpochMilliseconds())
+                } else {
+                    null
                 }
+            }
+            for( i in upperBounds.indices){
+                if (value <= upperBounds[i]){
+                    cumulativeCounts[i].updateAndGet {
+                        val current = Double.fromBits(it)
+                        val updated = current + 1.0
+                        updated.toRawBits()
+                    }
+                    //TODO(update Exemplar)
+                    break
+                }
+
+            }
+            sum.updateAndGet { currentBits ->
+                val current = Double.fromBits(currentBits)
+                val updated = current + value
+                updated.toRawBits()
             }
         }
 
-        public fun observeWithExemplar(value: Double, exemplarLabels: List<String>){
-
+        public fun get():Value{
+            val buckets = mutableListOf<Double>()
+            val exemplars = mutableListOf<Exemplar>()
+            var acc = 0.0
+            for (i in upperBounds.indices) {
+                acc+= Double.fromBits(cumulativeCounts[i].value)
+                buckets.add(acc)
+                exemplars.add(this.exemplars[i].value)
+            }
+            return Value(
+                sum = Double.fromBits(sum.value),
+                buckets = buckets,
+                created = created
+            )
         }
 
-        public fun getBuckets(): Double {
-            TODO()
-        }
-
-        public fun created(): Long {
-            TODO()
-        }
     }
 
-    public fun observe(value: Double): Unit? {
-        TODO()
+    public fun observe(value: Double){
+        noLabelsChild?.observe(value)
     }
 
-    public fun get(): Double {
-        TODO()
+    public fun observeWithExemplar(value: Double, exemplarLabels: List<String>){
+        noLabelsChild?.observeWithExemplar(value, exemplarLabels)
+    }
+
+    public fun time(runnable: Runnable): Double {
+        return noLabelsChild?.time(runnable) ?: 0.0
+    }
+
+    public fun timeWithExemplar(runnable: Runnable, exemplarLabels: List<String>): Double {
+        return noLabelsChild?.timeWithExemplar(runnable, exemplarLabels) ?: 0.0
     }
 
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
-        //TODO()
-        return familySamplesList(emptyList())
+        for((labels,childs) in childMetrics){
+            val value = childs.get()
+            val labelNamesWithLe = labelNames + "le"
+            for (i in value.buckets.indices) {
+                val labelValuesWithLe = labels + ((value.buckets[i]).toString())
+                samples.add(
+                    Sample(name = fullName + "_bucket",
+                        labelNames = labelNamesWithLe,
+                        labelValues = labelValuesWithLe,
+                        value = value.buckets[i],
+                        timestamp = value.created
+                    )
+                )
+            }
+            samples.add(Sample(name = fullName + "_count",
+                labelNames = labelNames,
+                labelValues = labels,
+                value = value.buckets[sortedBuckets.size-1],
+                timestamp = value.created
+            ))
+            samples.add(Sample(name = fullName + "_sum",
+                labelNames = labelNames,
+                labelValues = labels,
+                value = value.sum,
+                timestamp = value.created
+            ))
+
+        }
+        return familySamplesList(samples)
     }
 }
