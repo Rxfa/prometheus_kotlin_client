@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.vanniktech.mavenPublish)
 }
 
-group = "io.github.kotlin"
+group = "io.github.rxfa"
 version = "1.0.0"
 
 kotlin {
@@ -57,7 +57,7 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates(group.toString(), "library", version.toString())
+    coordinates(group.toString(), "core", version.toString())
 
     pom {
         name = "My library"

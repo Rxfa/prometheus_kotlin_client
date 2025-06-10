@@ -1,4 +1,4 @@
-import io.github.kotlin.fibonacci.CollectorRegistry
+import io.github.rxfa.prometheus.core.CollectorRegistry
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -8,6 +8,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import io.github.rxfa.prometheus.ktor.installPrometheusMetrics
 
 class KtorTest{
     @BeforeTest

@@ -1,4 +1,4 @@
-package io.github.kotlin.fibonacci
+package io.github.rxfa.prometheus.core
 
 /**
  * Common functionality for the metric types supported by prometheus.
