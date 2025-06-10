@@ -1,3 +1,5 @@
+package com.example.metrics
+
 import io.github.kotlin.fibonacci.CollectorRegistry
 import io.github.kotlin.fibonacci.PrometheusExporter
 import io.github.kotlin.fibonacci.counter

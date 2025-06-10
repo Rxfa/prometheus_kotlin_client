@@ -8,6 +8,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import com.example.metrics.installPrometheusMetrics
 
 class KtorTest{
     @BeforeTest
