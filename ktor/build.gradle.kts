@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm")
 }
 
-group = "org.example"
+group = "io.github.rxfa"
 version = "1.0.0"
 
 repositories {
@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":library"))
+    implementation(project(":core"))
 
     implementation("io.ktor:ktor-server-core:3.1.2")
     implementation("io.ktor:ktor-server-cio:3.1.2")
@@ -18,7 +18,7 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages:3.1.2")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
 
-    testImplementation(project(":library"))
+    testImplementation(project(":core"))
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-server-test-host:3.1.3")
 }
