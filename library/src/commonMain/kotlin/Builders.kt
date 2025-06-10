@@ -47,3 +47,14 @@ public class GaugeBuilder(name: String) : MetricBuilder<Gauge>(name) {
         return Gauge(name, _help, _labelNames, _unit, _clock)
     }
 }
+
+public class HistogramBuilder(name:String,private val buckets: List<Double>? = null ): MetricBuilder<Histogram>(name){
+    override fun build(): Histogram {
+        val defaultBuckets = buckets ?: listOf(
+            0.005, 0.01, 0.025, 0.05, 0.1,
+            0.25, 0.5, 1.0, 2.5, 5.0, 10.0
+        )
+        return Histogram(name, _help, _labelNames, _unit, buckets = defaultBuckets)
+    }
+
+}

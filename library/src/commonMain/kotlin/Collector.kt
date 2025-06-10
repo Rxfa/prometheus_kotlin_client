@@ -6,6 +6,7 @@ public abstract class Collector(
     public val labelNames: List<String> = emptyList(),
     public val unit: String = "",
 ) {
+
     public abstract val name: String
 
     public abstract val type: Type
