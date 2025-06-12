@@ -1,0 +1,86 @@
+\chapter{Design and Architecture} \label{ch:architecture}
+
+\section{High-Level Architecture}
+
+The Prometheus client for Kotlin is designed with a modular, coroutine-friendly architecture that adheres to the \textbf{OpenMetrics specification}~\cite{openmetrics-spec}. This design enables robust metric definition, collection, and exposition in distributed Kotlin applications while remaining compatible with modern observability tooling such as Prometheus.
+
+At its core, the architecture separates responsibilities into clearly defined layers:
+
+\begin{itemize}
+    \item \textbf{Collector Abstractions:} The base interfaces and abstract classes that define how metrics are described and collected.
+    
+    \item \textbf{Concrete Metric Types:} Implementations such as \texttt{Counter} inherit from a shared label-aware base class and enforce the conventions required by OpenMetrics (e.g., \texttt{\_total} suffix, monotonicity for counters).
+    
+    \item \textbf{Label Management:} A child-metric system that maps unique sets of label values to individual metric instances.
+    
+    \item \textbf{Registry:} A coroutine-safe global registry that allows metrics to be registered, queried, or cleared. 
+    
+    \item \textbf{Text Formatting Layer:} A dedicated formatter that converts collected metrics into the OpenMetrics text exposition format. This includes headers such as \texttt{\# TYPE}, \texttt{\# HELP}, and \texttt{\# UNIT}, and optionally includes high-resolution timestamps as specified by the standard.
+    
+    \item \textbf{Exporter:} A simple front-facing API that aggregates all registered metrics and returns a complete OpenMetrics-compliant snapshot for scraping.
+\end{itemize}
+
+\section{Concurrency and Coroutines}
+
+The Prometheus client for Kotlin is designed to operate efficiently and safely in concurrent environments common to modern Kotlin applications. To achieve this, it leverages Kotlin's coroutines and atomic primitives from the \texttt{kotlinx.atomicfu} library to ensure lock-free, thread-safe updates to metric values.
+
+\subsection{Atomic Metric Updates}
+
+Metrics such as counters must be safely incremented across multiple threads or coroutines without losing updates or causing data races. Instead of using traditional locks or mutexes, the client employs atomic operations on the raw bits of \texttt{Double} values, providing a performant non-blocking solution.
+
+For example, the \texttt{Counter} class internally stores its value as an \texttt{atomic} long representing the bit pattern of a \texttt{Double}. Increment operations update this atomic value using \texttt{updateAndGet} with a lambda that atomically reads the current bits, converts them to a \texttt{Double}, adds the increment, and writes back the updated bits.
+
+\subsection{Coroutine Context Offloading}
+
+To prevent blocking critical coroutine dispatchers or event loops, the increment operation is dispatched onto \texttt{Dispatchers.Default} using \texttt{withContext}. This design choice balances safety and performance by offloading potentially compute-heavy atomic updates to a background thread pool optimized for CPU-bound tasks.
+
+\subsection{Suspendable Increments}
+
+Increment functions such as \texttt{inc(amount: Double)} are declared \texttt{suspend} to integrate seamlessly with asynchronous code. This allows calling coroutines to perform metric updates without blocking the main thread or requiring additional synchronization primitives.
+
+\subsection{Generalization to Other Metric Types}
+
+While this concurrency approach is illustrated with the \texttt{Counter} metric, it applies equally to other metric types like \texttt{Gauge} that require thread-safe mutation. Each child metric instance independently manages its atomic state, enabling concurrent, lock-free updates even in heavily parallelized applications.
+
+\subsection{Summary}
+
+By combining atomic primitives and coroutine dispatchers, the Kotlin Prometheus client achieves a concurrency model that is both safe and performant. This design enables reliable metric collection in asynchronous, multi-threaded environments without sacrificing responsiveness or introducing complex locking logic.
+\section{Metric Registry and Lifecycle}
+
+The lifecycle of a metric in the Kotlin Prometheus client spans from its initial creation to the eventual collection of its samples during scraping. Understanding this lifecycle clarifies how metrics are instantiated, managed, and exposed within the system.
+
+\subsection{Metric Creation}
+
+Metrics are created by instantiating concrete subclasses of the abstract \texttt{Collector} class, such as \texttt{Counter} or \texttt{Gauge}. Each metric requires key metadata including a fully qualified name, a descriptive help string, a list of label names, and optionally a unit of measurement.
+
+Upon creation, metrics validate their names and label names against OpenMetrics-compliant regular expressions to ensure compatibility with monitoring systems.
+
+\subsection{SimpleCollector and Child Metrics}
+
+The client leverages a generic \texttt{SimpleCollector} abstraction that manages label-based child metrics. Each unique combination of label values corresponds to a \texttt{Child} instance that holds the actual metric state (e.g., a counter’s value).
+
+When a metric is accessed with specific label values via the \texttt{labels()} method, the collector either retrieves an existing \texttt{Child} or creates a new one. This lazy initialization ensures efficient memory usage by only instantiating metric instances as needed.
+
+\subsection{Registry Registration}
+
+Once created, metrics are registered with a \texttt{CollectorRegistry}, either explicitly or via a default global registry. Registration guarantees the uniqueness of metric names within the registry and enables centralized management.
+
+The registry maintains a thread-safe collection of all registered metrics, using a coroutine-friendly \texttt{Mutex} to synchronize additions and removals. This approach supports dynamic lifecycle management, allowing metrics to be registered or unregistered during runtime.
+
+\subsection{Metric Mutation and Updates}
+
+Metric values are updated through their respective \texttt{Child} instances, which expose safe, concurrent operations such as incrementing counters or setting gauges. Atomic operations and coroutine context switching ensure thread-safe, lock-free updates even in asynchronous environments.
+
+\subsection{Sample Creation and Collection}
+
+During a scrape, the registry invokes the \texttt{collect()} method on each registered metric. This triggers the metric to aggregate its current state into a list of \texttt{Sample} instances, each representing a single data point with its name, labels, value, and optional timestamp.
+
+These samples are gathered into a \texttt{MetricFamilySamples} object, which encapsulates the entire metric family with metadata such as type and help text, in accordance with the OpenMetrics specification.
+
+\subsection{Exposition}
+
+Finally, the collected samples are passed to a formatter that converts them into the OpenMetrics text exposition format. This formatted output is then served to monitoring systems for ingestion and visualization.
+
+\bigskip
+
+Through this lifecycle—from creation, label-based child instantiation, registry management, concurrent updates, to sample aggregation—the client ensures accurate, consistent, and efficient metric reporting that integrates seamlessly with Prometheus and OpenMetrics-compatible tools.

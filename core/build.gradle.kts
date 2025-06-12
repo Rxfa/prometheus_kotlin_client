@@ -60,10 +60,10 @@ mavenPublishing {
     coordinates(group.toString(), "core", version.toString())
 
     pom {
-        name = "My library"
-        description = "A library."
-        inceptionYear = "2024"
-        url = "https://github.com/kotlin/multiplatform-library-template/"
+        name = "Prometheus Kotlin client"
+        description = "Prometheus client library written in Kotlin"
+        inceptionYear = "2025"
+        url = "https://github.com/Rxfa/prometheus_kotlin_client/"
         licenses {
             license {
                 name = "XXX"
