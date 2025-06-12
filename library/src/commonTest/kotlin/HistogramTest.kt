@@ -40,10 +40,12 @@ class HistogramTest {
             histogram.observe(3.0)
             histogram.observe(5.0)
             histogram.observe(7.0)
+            histogram.observe(10.0)
 
             val value = histogram.get()
             assertEquals(4, value.buckets.size)
-            assertEquals(listOf(0.0, 1.0, 2.0, 4.0), value.buckets)
+            assertEquals(listOf(0.0, 1.0, 2.0, 5.0), value.buckets)
+            assertEquals(26.0, value.sum)
         }
 
     }

@@ -10,8 +10,8 @@ import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 import kotlin.math.pow
-
-public fun histogram(
+/*
+public fun summary(
     name: String,
     block: HistogramBuilder.() -> Unit
 ): Histogram {
@@ -145,8 +145,8 @@ public class Histogram internal constructor(
         }
 
         public constructor(buckets: List<Double>,
-                            exemplarsEnabled: Boolean = false,
-                            exemplarSampler: HistogramExemplarSample? = null) {
+                           exemplarsEnabled: Boolean = false,
+                           exemplarSampler: HistogramExemplarSample? = null) {
             this.upperBounds = buckets
             this.exemplarsEnabled = exemplarsEnabled
             this.exemplarSampler = exemplarSampler
@@ -303,3 +303,5 @@ public class Histogram internal constructor(
         return familySamplesList(samples)
     }
 }
+
+ */
