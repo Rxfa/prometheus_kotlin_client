@@ -1,9 +1,9 @@
 package io.github.kotlin.fibonacci.exemplars
 
 public class Exemplar {
-    private final val labels:List<String>
-    private final val value: Double
-    private final val timestamp: Long?
+    private val labels:List<String>
+    private val value: Double
+    private val timestamp: Long?
 
 
     public constructor(labels: List<String>, value: Double, timestamp: Long) {

@@ -1,12 +1,13 @@
 package io.github.kotlin.fibonacci
 
 import io.github.kotlin.fibonacci.exemplars.Exemplar
+import io.github.kotlin.fibonacci.exemplars.ExemplarConfig
 import io.github.kotlin.fibonacci.exemplars.HistogramExemplarSample
 import kotlinx.atomicfu.AtomicLong
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.updateAndGet
-import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 import kotlin.math.pow
 
@@ -93,9 +94,10 @@ public class Histogram internal constructor(
         if (buckets[buckets.size - 1] != Double.POSITIVE_INFINITY) {
             sortedBuckets += Double.POSITIVE_INFINITY
         }
+        initializeNoLabelsChild()
     }
 
-    public class Timer: AutoCloseable{
+    public class Timer{
 
         private val child: Child
         private val start: Long
@@ -107,41 +109,30 @@ public class Histogram internal constructor(
             this.start = start
         }
 
-        public fun observeDuration():Double{
+        public suspend fun observeDuration():Double{
             return observeDurationWithExemplar(listOf())
         }
 
-        public fun observeDurationWithExemplar(exemplarLabels: List<String>): Double {
+        public suspend fun observeDurationWithExemplar(exemplarLabels: List<String>): Double {
             val elapsed = simpleTimer.elapsedSecondsFromNanos(start, simpleTimer.defaultTimeProvider.milliTime)
             child.observeWithExemplar(elapsed, exemplarLabels)
             return elapsed
         }
 
-        public override fun close() {
-            observeDuration()
-        }
 
     }
 
     public inner class Child {
-        private val bucketCounts: MutableMap<Double, Long> = mutableMapOf()
-        private var count = atomic(0L)
-
-        init {
-            for (bucket in sortedBuckets) {
-                bucketCounts[bucket] = 0
-            }
-        }
 
         public fun startTimer():Timer{
             return Timer(this, Clock.System.now().toEpochMilliseconds())
         }
 
-        public fun time(runnable: Runnable):Double{
+        public suspend fun time(runnable: Runnable):Double{
             return timeWithExemplar(runnable, listOf())
         }
 
-        public fun timeWithExemplar(runnable: Runnable, exemplarLabels: List<String>): Double {
+        public suspend fun timeWithExemplar(runnable: Runnable, exemplarLabels: List<String>): Double {
             val start = startTimer()
             val final: Double;
             try {
@@ -160,60 +151,95 @@ public class Histogram internal constructor(
             this.upperBounds = buckets
             this.exemplarsEnabled = exemplarsEnabled
             this.exemplarSampler = exemplarSampler
-            this.exemplars = mutableListOf<AtomicRef<Exemplar>>()
+            this.exemplars = mutableListOf<AtomicRef<Exemplar?>>()
             this.cumulativeCounts = mutableListOf<AtomicLong>()
             for (i in buckets.indices) {
-                cumulativeCounts.add(atomic(0.0.toRawBits()))
+                cumulativeCounts.add(atomic(0L))
                 exemplars.add(atomic(Exemplar(emptyList(), 0.0)))
             }
         }
-        private final val upperBounds: List<Double>
-        private final val exemplarsEnabled: Boolean
-        private final val exemplars: MutableList<AtomicRef<Exemplar>>
-        private final val exemplarSampler: HistogramExemplarSample?
-        private final val cumulativeCounts: MutableList<AtomicLong>
-        private final val sum = atomic(0.0.toRawBits())
-        private final val created = Clock.System.now().toEpochMilliseconds()
+        private val upperBounds: List<Double>
+        private val exemplarsEnabled: Boolean
+        private val exemplars: MutableList<AtomicRef<Exemplar?>>
+        private val exemplarSampler: HistogramExemplarSample?
+        private val cumulativeCounts: MutableList<AtomicLong>
+        private val sum = atomic(0.0.toRawBits())
+        private val created = Clock.System.now().toEpochMilliseconds()
 
 
 
-        public fun observe(value: Double) {
+        public suspend fun observe(value: Double) {
             observeWithExemplar(value, null)
         }
 
-        public fun observeWithExemplar(value: Double, exemplarLabels: List<String>?){
-            val exemplar = exemplarLabels ?.let {
-                if (exemplarsEnabled) {
-                   Exemplar(exemplarLabels,value, Clock.System.now().toEpochMilliseconds())
-                } else {
-                    null
-                }
-            }
-            for( i in upperBounds.indices){
-                if (value <= upperBounds[i]){
-                    cumulativeCounts[i].updateAndGet {
-                        val current = Double.fromBits(it)
-                        val updated = current + 1.0
-                        updated.toRawBits()
+        public suspend fun observeWithExemplar(value: Double, exemplarLabels: List<String>?){
+            withContext(Dispatchers.Default) {
+                val exemplar = exemplarLabels?.let {
+                    if (exemplarsEnabled) {
+                        Exemplar(exemplarLabels, value, Clock.System.now().toEpochMilliseconds())
+                    } else {
+                        null
                     }
-                    //TODO(update Exemplar)
-                    break
                 }
+                for (i in upperBounds.indices) {
+                    if (value <= upperBounds[i]) {
+                        cumulativeCounts[i].getAndIncrement()
+                        updateExemplar(value, i, exemplar)
+                        break
+                    }
+                }
+                sum.updateAndGet { currentBits ->
+                    val current = Double.fromBits(currentBits)
+                    val updated = current + value
+                    updated.toRawBits()
+                }
+            }
+        }
 
+        private fun updateExemplar(value: Double, i: Int, userProvidedExemplar: Exemplar?) {
+            val exemplar = exemplars[i]
+            val bucketFrom = if (i == 0) Double.NEGATIVE_INFINITY else upperBounds[i - 1]
+            val bucketTo = upperBounds[i]
+            var prev: Exemplar?
+            var next: Exemplar?
+            do {
+                prev = exemplar.value
+                next = userProvidedExemplar ?: sampleNextExemplar(value, bucketFrom, bucketTo, prev)
+                if (next == null || next == prev) {
+                    return
+                }
+            } while (!exemplar.compareAndSet(prev, next))
+        }
+
+        private fun sampleNextExemplar(
+            value: Double,
+            bucketFrom: Double,
+            bucketTo: Double,
+            prev: Exemplar?
+        ): Exemplar? {
+            if (!exemplarsEnabled) {
+                return null
             }
-            sum.updateAndGet { currentBits ->
-                val current = Double.fromBits(currentBits)
-                val updated = current + value
-                updated.toRawBits()
+
+            if(exemplarSampler != null){
+                return exemplarSampler.sample(value, bucketFrom, bucketTo, prev)
             }
+
+            if(exemplarsEnabled || ExemplarConfig.isEnabled()){
+                val sampler = ExemplarConfig.getHistogramExemplarSampler()
+                if(sampler != null){
+                    return sampler.sample(value, bucketFrom, bucketTo, prev)
+                }
+            }
+            return null
         }
 
         public fun get():Value{
             val buckets = mutableListOf<Double>()
-            val exemplars = mutableListOf<Exemplar>()
+            val exemplars = mutableListOf<Exemplar?>()
             var acc = 0.0
             for (i in upperBounds.indices) {
-                acc+= Double.fromBits(cumulativeCounts[i].value)
+                acc+= cumulativeCounts[i].value
                 buckets.add(acc)
                 exemplars.add(this.exemplars[i].value)
             }
@@ -226,20 +252,23 @@ public class Histogram internal constructor(
 
     }
 
-    public fun observe(value: Double){
+    public suspend fun observe(value: Double){
         noLabelsChild?.observe(value)
     }
 
-    public fun observeWithExemplar(value: Double, exemplarLabels: List<String>){
+    public suspend fun observeWithExemplar(value: Double, exemplarLabels: List<String>){
         noLabelsChild?.observeWithExemplar(value, exemplarLabels)
     }
 
-    public fun time(runnable: Runnable): Double {
+    public suspend fun time(runnable: Runnable): Double {
         return noLabelsChild?.time(runnable) ?: 0.0
     }
 
-    public fun timeWithExemplar(runnable: Runnable, exemplarLabels: List<String>): Double {
+    public suspend fun timeWithExemplar(runnable: Runnable, exemplarLabels: List<String>): Double {
         return noLabelsChild?.timeWithExemplar(runnable, exemplarLabels) ?: 0.0
+    }
+    public fun get(): Value {
+        return noLabelsChild?.get() ?: Value(0.0, emptyList(), Clock.System.now().toEpochMilliseconds())
     }
 
     override fun collect(): MetricFamilySamples {

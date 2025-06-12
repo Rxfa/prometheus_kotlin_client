@@ -9,3 +9,4 @@ public interface HistogramExemplarSample {
          previous: Exemplar?
      ):Exemplar;
 }
+
