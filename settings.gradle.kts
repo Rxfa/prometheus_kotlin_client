@@ -14,6 +14,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "prometheus-kotlin-client"
-include(":library")
+include(":core")
 include(":ktor")
-include(":example")
+include(":ktor-example")

@@ -1,4 +1,4 @@
-package io.github.kotlin.fibonacci
+package io.github.rxfa.prometheus.core
 
 public class PrometheusExporter {
     public val registry: CollectorRegistry = CollectorRegistry.defaultRegistry

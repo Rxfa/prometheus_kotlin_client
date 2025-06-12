@@ -1,5 +1,5 @@
-import io.github.kotlin.fibonacci.CollectorRegistry
-import io.github.kotlin.fibonacci.Counter
+import io.github.rxfa.prometheus.core.CollectorRegistry
+import io.github.rxfa.prometheus.core.Counter
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
