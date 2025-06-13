@@ -21,6 +21,7 @@ public abstract class SimpleCollector<Child>(
     init {
         checkMetricName(fullName)
         labelNames.forEach{ checkMetricLabelName(it) }
+        checkUnitName(unit)
     }
 
     /**
@@ -103,5 +104,22 @@ public abstract class SimpleCollector<Child>(
         samples: List<Sample>
     ): MetricFamilySamples {
         return MetricFamilySamples(name, unit, type, help, samples)
+    }
+
+    /**
+     * Constructs and returns the fully qualified metric name.
+     *
+     * This function should be implemented by subclasses to generate a metric name
+     * that includes any required suffixes, such as units (e.g., `_seconds`, `_bytes`)
+     * and type-specific suffixes like `_total` for counters.
+     *
+     * @return the fully constructed metric name with all required suffixes
+     */
+    protected open fun buildMetricName(): String{
+        var metricName: String = fullName
+        if (unit.isNotBlank() && !metricName.endsWith(unit)) {
+            metricName = "${metricName}_${unit}"
+        }
+        return metricName
     }
 }

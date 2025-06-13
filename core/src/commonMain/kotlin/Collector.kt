@@ -98,6 +98,11 @@ public abstract class Collector(
     }
 
     public companion object {
+        private val validBaseUnits =
+            setOf(
+                "seconds", "celsius", "kelvin", "meters", "bytes", "ratio", "volts", "amperes",
+                "joules", "grams"
+            )
         private val metricNameRegex = Regex("[a-zA-Z_:][a-zA-Z0-9_:]*")
         private val metricLabelNameRegex = Regex("[a-zA-Z_][a-zA-Z0-9_]*")
         private val reservedMetricLabelNameRegex = Regex("__.*")
@@ -111,6 +116,18 @@ public abstract class Collector(
         public fun checkMetricName(name: String){
             require(metricNameRegex.matches(name)) {
                 "Metric name '$name' is not valid."
+            }
+        }
+
+        /**
+         * Validates a metric unit name according to Prometheus naming rules.
+         *
+         * @param unit The unit name to check.
+         * @throws IllegalArgumentException if the unit name is invalid.
+         */
+        public fun checkUnitName(unit: String){
+            require(unit.isEmpty() || unit in validBaseUnits) {
+                "Metric name '$unit' is not valid."
             }
         }
 

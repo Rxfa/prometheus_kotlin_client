@@ -41,7 +41,7 @@ public class Counter internal constructor(
     public val includeCreatedSeries: Boolean = false,
 ) : SimpleCollector<Counter.Child>(fullName, help, labelNames, unit) {
     override val suffixes: Set<String> = setOf("_total")
-    override val name: String = if(suffixes.any{ fullName.endsWith(it) }) fullName else fullName + "_total"
+    override val name: String = buildMetricName()
     override val type: Type = Type.COUNTER
 
     init {
@@ -50,6 +50,14 @@ public class Counter internal constructor(
 
     override fun newChild(): Child {
         return Child()
+    }
+
+    override fun buildMetricName(): String {
+        var metricName: String = fullName.removeSuffix("_total")
+        if (unit.isNotBlank() && !metricName.endsWith(unit)) {
+            metricName = "${metricName}_${unit}"
+        }
+        return "${metricName}_total"
     }
 
     public inner class Child {
