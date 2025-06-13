@@ -12,27 +12,58 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.runBlocking
 
 /**
- * Installs Prometheus metrics collection in a Ktor [Application].
+ * Configuration options for Prometheus metrics installation in a Ktor application.
  *
- * Metrics exposed:
- * - `http_requests_total{method, path}`
- * - `http_requests_errors_total{method, status_code, path}`
- * - `http_exceptions_total{method, path, exception_class}`
- * - `/metrics` endpoint for Prometheus scraping
- *
- * @param exporter Optional [PrometheusExporter] instance to use (defaults to [CollectorRegistry.defaultRegistry]).
+ * @property exposeEndpoint If `true`, enables the `/metrics` HTTP endpoint for Prometheus scraping.
+ * Defaults to `true`.
+ * @property metricsPath The HTTP path where Prometheus metrics will be exposed. Defaults to `/metrics`.
  */
-fun Application.installPrometheusMetrics(exporter: PrometheusExporter = PrometheusExporter()) {
+class PrometheusConfig {
+    var exposeEndpoint: Boolean = true
+    var metricsPath: String = "/metrics"
+}
+
+/**
+ * Installs Prometheus metrics collection into the Ktor [Application].
+ *
+ * This function sets up instrumentation to collect HTTP request metrics and exposes them
+ * via a configurable HTTP endpoint for Prometheus to scrape.
+ *
+ * **Metrics collected:**
+ * - `http_requests_total{method, path}`: total count of all HTTP requests received
+ * - `http_requests_errors_total{method, status_code, path}`: total count of HTTP error responses (status 400-500)
+ * - `http_exceptions_total{method, path, exception_class}`: total count of exceptions thrown during request handling
+ *
+ * **Endpoint:**
+ * - Exposes metrics at the path specified in [PrometheusConfig.metricsPath] (default `/metrics`).
+ *
+ * @param exporter Optional [PrometheusExporter] instance to use for metrics registration and scraping.
+ * Defaults to a new exporter with the default collector registry.
+ * @param configure Lambda to configure [PrometheusConfig] options such as endpoint path and exposure.
+ */
+fun Application.installPrometheusMetrics(
+    exporter: PrometheusExporter = PrometheusExporter(),
+    configure: PrometheusConfig.() -> Unit = {}
+) {
+    val config = PrometheusConfig().apply(configure)
     val ktorMetrics = KtorMetrics(exporter.registry)
     ktorMetrics.setupMonitoring(this)
 
-    routing {
-        get("/metrics") {
-            call.respondText(exporter.scrape(), ContentType.Text.Plain)
+    if (config.exposeEndpoint) {
+        routing {
+            get(config.metricsPath) {
+                call.respondText(exporter.scrape(), ContentType.Text.Plain)
+            }
         }
     }
 }
 
+/**
+ * Internal class responsible for registering and updating Prometheus metrics related to
+ * Ktor HTTP request lifecycle.
+ *
+ * @property registry The [CollectorRegistry] to register metrics with.
+ */
 private class KtorMetrics(private val registry: CollectorRegistry) {
     private val totalRequests = counter("http_requests_total") {
         help("Total HTTP requests received")
@@ -59,27 +90,45 @@ private class KtorMetrics(private val registry: CollectorRegistry) {
 
         application.intercept(ApplicationCallPipeline.Monitoring) {
             val method = call.request.httpMethod.value
-            val path = call.request.uri
+            val path = normalizePath(call.request.path())
             totalRequests.labels(method, path).inc()
             proceed()
         }
 
-        // Runs after the entire request pipeline, including interceptors.
+        // Install status pages to intercept exceptions and error status codes
         application.install(StatusPages) {
             exception<Throwable> { call, cause ->
                 val method = call.request.httpMethod.value
-                val path = call.request.uri
+                val path = normalizePath(call.request.path())
                 val exceptionClass = cause::class.simpleName ?: "UnknownException"
                 totalExceptions.labels(method, path, exceptionClass).inc()
             }
 
-            val httpStatusCodes = HttpStatusCode.allStatusCodes.filter { it.value in 400..500 }.toTypedArray()
+            val httpStatusCodes = HttpStatusCode.allStatusCodes.filter { it.value in 400 until 500 }.toTypedArray()
             status(*httpStatusCodes) { call, status ->
                 val method = call.request.httpMethod.value
-                val path = call.request.uri
+                val path = normalizePath(call.request.path())
                 val statusCode = status.value.toString()
                 totalErrors.labels(method, statusCode, path).inc()
             }
         }
     }
+}
+
+/**
+ * Normalizes a URI path by replacing numeric IDs or UUIDs in path segments with `{param}`.
+ *
+ * Example:
+ * - `/users/123/profile` -> `/users/{param}/profile`
+ * - `/orders/550e8400-e29b-41d4-a716-446655440000/details` -> `/orders/{param}/details`
+ */
+private fun normalizePath(path: String): String {
+    return path.split("/")
+        .joinToString("/") { segment ->
+            when {
+                segment.matches(Regex("\\d+")) -> "{param}"   // numeric IDs
+                segment.matches(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) -> "{param}" // UUID
+                else -> segment
+            }
+        }
 }
