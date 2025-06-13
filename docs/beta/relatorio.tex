@@ -1,0 +1,168 @@
+% Classe do documento e parâmetros gerais.
+\documentclass[a4paper,openright,twoside,11pt]{report}
+
+% Packages utilizadas e respetivos parâmetros.
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\usepackage{lipsum} % gerador de texto
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage[Algoritmo]{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage[printonlyused]{acronym}
+\usepackage{listings}
+\usepackage{hyperref}
+\renewcommand{\algorithmicrequire}{\textbf{Dados: }}
+\renewcommand{\algorithmicensure}{\textbf{Resultado: }}
+
+% Definições das dimensões das páginas
+\setlength{\textheight}{24.00cm}
+\setlength{\textwidth}{15.50cm}
+\setlength{\topmargin}{0.35cm}
+\setlength{\headheight}{0cm}
+\setlength{\headsep}{0cm}
+\setlength{\oddsidemargin}{0.25cm}
+\setlength{\evensidemargin}{0.25cm}
+
+%\renewcommand{\baselinestretch}{1}
+
+% Página inicial (capa)
+\title{
+    \vspace{-50mm}
+    \begin{minipage}[l]{\textwidth}
+        \hspace{-20mm}\resizebox{75mm}{!}{\includegraphics{./figures/logoISELnew2}}\\
+    \end{minipage}\\[20mm]
+    {\Huge \textbf{Krometheus}}\\[3mm]
+    {\Large A Prometheus Kotlin client library}\\[10mm]
+}
+
+% Nome dos autores (um por linha)
+\author{
+    \begin{tabular}{ll}
+        & Mário Carvalho \\
+        & Rafael Nicolau \\[50mm]
+    \end{tabular}}
+
+\date{
+    \begin{tabular}{ll}
+    {Supervisor:}
+        & José Simão \\
+    \end{tabular}\\[10mm]
+% Deixar o indicador respetivo em função da versão do relatório.
+    Final report written for Project and Seminary\\
+    BSc in Computer Science and Computer Engineering\\[20mm]
+    June 2025}
+
+
+\begin{document}
+    \thispagestyle{empty}
+    \maketitle
+
+    \baselineskip 18pt % line spacing: 12pt for single, 18pt for 1 1/2, and 24pt for double spacing
+
+    \newpage
+    \thispagestyle{empty}
+% Fim da contracapa
+
+% Página com identificação completa (número e nome) e assinaturas do(s) estudante(s) e do(s) orientador(es)
+    \cleardoublepage
+    \setcounter{page}{1}
+    \begin{center}
+        \textsc{\LARGE Instituto Superior de Engenharia de Lisboa}\\[50mm]
+
+        {\Huge \textbf{Krometheus}}\\[3mm]
+        {\Large A Prometheus Kotlin client library}\\[10mm]
+        \begin{tabular}{rl}
+            50561 & Mário Rijo Antunes Carvalho\\[10mm]
+            & \rule{75mm}{0.5pt}\\[5mm]
+            50546 & Rafael Sebastião Matias Nicolau\\[10mm]
+            & \rule{75mm}{0.5pt}              \\
+        \end{tabular}\\[10mm]
+
+        \begin{tabular}{rl}
+            Supervisor: & José Manuel de Campos Lages Garcia Simão\\[10mm]
+            & \rule{75mm}{0.5pt}\\[5mm]
+        \end{tabular}\\[10mm]
+
+        Final report written for Project and Seminary\\
+        BSc in Computer Science and Computer Engineering\\[20mm]
+        June 2025\\
+    \end{center}
+
+% Página de resumo em ingles
+    \cleardoublepage
+    \chapter*{Abstract}
+    The growing complexity of modern software systems, driven by the adoption of distributed architectures,
+    microservices, and asynchronous execution—has made observability a critical aspect of system design.
+    Among its key components, metrics-based monitoring enables developers and operators to track the internal state and performance of applications and infrastructure.
+    Prometheus has become a widely used standard for collecting and querying metrics; however, its official client libraries primarily target languages such as Go, Python, and Java.
+    These implementations do not offer idiomatic support for Kotlin, its coroutine-based concurrency model, or
+    Kotlin-specific frameworks like Ktor.\\
+
+    This project presents a Prometheus client library implemented in Kotlin, designed with coroutine safety, expressiveness, and alignment with Kotlin's language features in mind.
+    The library supports core Prometheus metric types and provides a straightforward and testable interface for instrumenting Kotlin applications.
+    This report details the motivation for the project, its design and architecture, the implementation process, and an evaluation of the resulting system.
+    The library fills an existing gap in the Kotlin ecosystem by offering a native and idiomatic solution for
+    integrating metrics-based observability.\\
+
+    {\textbf{Keywords}: Observability, Prometheus, Metrics, Monitoring.}
+
+%% Página de agradecimentos
+    \cleardoublepage
+    \chapter*{Acknowledgments}
+    \lipsum[1]
+    \vspace{2em}
+    \begin{flushright}
+        Rafael Nicolau
+    \end{flushright}
+
+    \lipsum[1]
+    \vspace{2em}
+    \begin{flushright}
+        Mário Carvalho
+    \end{flushright}
+
+% Geração do índice de conteúdos
+    \cleardoublepage
+    \tableofcontents \cleardoublepage
+
+% Geração do índice de figuras e de tabelas
+    \listoffigures \cleardoublepage
+    \listoftables \cleardoublepage
+    \input{acronyms} \cleardoublepage
+
+% Chapter 1
+    \include{introduction}
+
+% Chapter 2
+    \include{background}
+
+% Chapter 3
+    \include{problem}
+
+% Chapter 4
+    \include{architecture}
+
+% Chapter 5
+    \include{implementation}
+
+% Chapter 6
+    \include{evaluation}
+
+% Chapter 7
+    \include{future}
+
+% Chapter 8
+    \include{conclusion}
+
+% References
+    \bibliographystyle{plain}
+    \bibliography{refs}
+    \addcontentsline{toc}{chapter}{References}
+
+    \appendix
+    \include{appendix}
+
+\end{document} 

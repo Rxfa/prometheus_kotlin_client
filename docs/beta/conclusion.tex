@@ -1,0 +1,34 @@
+\chapter{Conclusion} \label{cap:conclusion}
+
+\section{Summary of Contributions}
+
+This work presents a lightweight, idiomatic Prometheus client library implemented in Kotlin. The client is fully compatible with the \textit{OpenMetrics} specification, offering accurate and interoperable metric exposition. It supports core metric types such as counters and gauges, provides a coroutine-friendly API, and ensures thread safety using Kotlin-native atomic operations.
+
+Key contributions include:
+\begin{itemize}
+  \item A clean and extensible architecture built around a type-safe metric abstraction (\texttt{Collector}, \texttt{SimpleCollector}, etc.).
+  \item A registry system for managing collector lifecycles and aggregation.
+  \item Text-format exposition compatible with Prometheus scraping tools.
+  \item Benchmarking and performance evaluation against the Java client.
+\end{itemize}
+
+This Kotlin client lowers the barrier for observability in coroutine-based applications and provides a foundation for building production-ready telemetry systems within Kotlin ecosystems.
+
+\section{Lessons Learned}
+
+Several insights emerged during the development of the client:
+\begin{itemize}
+  \item \textbf{Concurrency in Kotlin differs fundamentally from Java:} While Java uses low-level concurrency primitives (e.g., \texttt{LongAdder}), Kotlin favors structured concurrency and coroutine-based flows. Translating performance-efficient behavior required careful balance between safety and performance.
+  \item \textbf{OpenMetrics compliance matters:} Adhering strictly to the OpenMetrics specification clarified edge cases in formatting and helped avoid incompatibilities with Prometheus tooling.
+  \item \textbf{Idiomatic Kotlin pays off:} By using extension functions, builders, and default parameters, the library achieves an expressive and concise API, improving usability without sacrificing clarity.
+\end{itemize}
+
+These lessons inform both the current design and potential future enhancements, particularly in integrating metrics with reactive and distributed systems.
+
+\section{Final Remarks}
+
+As cloud-native systems increasingly rely on observability, having a performant and idiomatic client library for metrics becomes essential. This Kotlin Prometheus client demonstrates that it's possible to build such a tool with minimal overhead while preserving interoperability and correctness.
+
+While some performance trade-offs exist due to the emphasis on coroutine safety, the architectural decisions ensure stability, scalability, and ease of integration into Kotlin applications. Future iterations may introduce support for histograms, summaries, and direct HTTP exposition to further broaden its applicability.
+
+This project lays the groundwork for Kotlin-native observability tooling and contributes to the broader ecosystem of metrics collection in modern JVM environments.
