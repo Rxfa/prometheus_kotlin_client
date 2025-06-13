@@ -11,6 +11,17 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.runBlocking
 
+/**
+ * Installs Prometheus metrics collection in a Ktor [Application].
+ *
+ * Metrics exposed:
+ * - `http_requests_total{method, path}`
+ * - `http_requests_errors_total{method, status_code, path}`
+ * - `http_exceptions_total{method, path, exception_class}`
+ * - `/metrics` endpoint for Prometheus scraping
+ *
+ * @param exporter Optional [PrometheusExporter] instance to use (defaults to [CollectorRegistry.defaultRegistry]).
+ */
 fun Application.installPrometheusMetrics(exporter: PrometheusExporter = PrometheusExporter()) {
     val ktorMetrics = KtorMetrics(exporter.registry)
     ktorMetrics.setupMonitoring(this)
