@@ -17,10 +17,13 @@ import kotlinx.coroutines.runBlocking
  * @property exposeEndpoint If `true`, enables the `/metrics` HTTP endpoint for Prometheus scraping.
  * Defaults to `true`.
  * @property metricsPath The HTTP path where Prometheus metrics will be exposed. Defaults to `/metrics`.
+ * @property includeTimestamp If `true`, each exported metric will include a timestamp alongside its value.
+ * This can be useful for certain Prometheus setups or debugging scenarios. Defaults to `false`.
  */
 class PrometheusConfig {
     var exposeEndpoint: Boolean = true
     var metricsPath: String = "/metrics"
+    var includeTimestamp: Boolean = false
 }
 
 /**
@@ -52,7 +55,7 @@ fun Application.installPrometheusMetrics(
     if (config.exposeEndpoint) {
         routing {
             get(config.metricsPath) {
-                call.respondText(exporter.scrape(), ContentType.Text.Plain)
+                call.respondText(exporter.scrape(config.includeTimestamp), ContentType.Text.Plain)
             }
         }
     }
