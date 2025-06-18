@@ -48,7 +48,7 @@ public fun exponentialHistogramBuckets(
     return HistogramBuilder(name, buckets).apply(block).build()
 }
 
-public data class Value(
+public data class ValueHistogram(
     public val sum: Double,
     public val buckets: List<Double>,
     public val created: Long
@@ -233,7 +233,7 @@ public class Histogram internal constructor(
             return null
         }
 
-        public fun get():Value{
+        public fun get():ValueHistogram{
             val buckets = mutableListOf<Double>()
             val exemplars = mutableListOf<Exemplar?>()
             var acc = 0.0
@@ -242,7 +242,7 @@ public class Histogram internal constructor(
                 buckets.add(acc)
                 exemplars.add(this.exemplars[i].value)
             }
-            return Value(
+            return ValueHistogram(
                 sum = Double.fromBits(sum.value),
                 buckets = buckets,
                 created = created
@@ -266,8 +266,8 @@ public class Histogram internal constructor(
     public suspend fun timeWithExemplar(runnable: Runnable, exemplarLabels: List<String>): Double {
         return noLabelsChild?.timeWithExemplar(runnable, exemplarLabels) ?: 0.0
     }
-    public fun get(): Value {
-        return noLabelsChild?.get() ?: Value(0.0, emptyList(), Clock.System.now().toEpochMilliseconds())
+    public fun get(): ValueHistogram {
+        return noLabelsChild?.get() ?: ValueHistogram(0.0, emptyList(), Clock.System.now().toEpochMilliseconds())
     }
 
     override fun collect(): MetricFamilySamples {

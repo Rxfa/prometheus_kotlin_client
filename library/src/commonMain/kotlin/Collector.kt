@@ -18,6 +18,7 @@ public abstract class Collector(
         UNKNOWN("unknown"),
         GAUGE("gauge"),
         HISTOGRAM("histogram"),
+        SUMMARY("summary"),
     }
 
     /**

@@ -58,3 +58,13 @@ public class HistogramBuilder(name:String,private val buckets: List<Double>? = n
     }
 
 }
+
+public class SummaryBuilder internal constructor(
+    name: String,
+    private val includeCreatedSeries: Boolean = false
+) : MetricBuilder<Summary>(name) {
+
+    override fun build(): Summary {
+        return Summary(name, _help, _labelNames, _unit, includeCreatedSeries)
+    }
+}
