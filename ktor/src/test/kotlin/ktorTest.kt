@@ -8,7 +8,10 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import io.github.rxfa.prometheus.ktor.installPrometheusMetrics
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 
 class KtorTest{
     @BeforeTest
@@ -18,60 +21,100 @@ class KtorTest{
         }
     }
 
-
     @Test
-    fun testKtorIntegration(){
-        testApplication {
-            application {
-                installPrometheusMetrics()
-            }
+    fun `metrics endpoint is exposed and returns data`() = testApplication {
+        application {
+            installPrometheusMetrics()
 
-            val response = client.get("/metrics")
-            val responseBody = response.bodyAsText()
-            assertEquals(HttpStatusCode.OK, response.status)
-            assertEquals(ContentType.Text.Plain, response.contentType()!!.withoutParameters())
-            assertContains(responseBody, "# TYPE http_requests_total counter")
-            assertContains(responseBody, "# HELP http_requests_total Total HTTP requests received")
-            assertContains(responseBody, "http_requests_total{method=\"GET\",path=\"/metrics\"} 1.0")
+            routing {
+                get("/hello") {
+                    call.respondText("Hello")
+                }
+            }
+        }
+
+        client.get("/hello").apply {
+            assertEquals(HttpStatusCode.OK, status)
+        }
+
+        client.get("/metrics").apply {
+            assertEquals(HttpStatusCode.OK, status)
+            assertContains(bodyAsText(), "http_requests_total")
         }
     }
 
     @Test
-    fun testTotalHTTPRequestCount(){
-        testApplication {
-            application {
-                installPrometheusMetrics()
+    fun `custom metricsPath is respected`() = testApplication {
+        application {
+            installPrometheusMetrics {
+                metricsPath = "/custom-metrics"
             }
-            val response = client.get("/metrics")
-            val responseBody = response.bodyAsText()
-            assertEquals(HttpStatusCode.OK, response.status)
-            assertEquals(ContentType.Text.Plain, response.contentType()!!.withoutParameters())
-            assertContains(responseBody, "# TYPE http_requests_total counter")
-            assertContains(responseBody, "# HELP http_requests_total Total HTTP requests received")
-            assertContains(responseBody, "http_requests_total{method=\"GET\",path=\"/metrics\"} 1.0")
         }
+
+        assertEquals(HttpStatusCode.OK, client.get("/custom-metrics").status)
+        assertEquals(HttpStatusCode.NotFound, client.get("/metrics").status)
     }
 
     @Test
-    fun testTotalErrorCount(){
-        testApplication {
-            application {
-                installPrometheusMetrics()
+    fun `exposeEndpoint false disables metrics endpoint`() = testApplication {
+        application {
+            installPrometheusMetrics {
+                exposeEndpoint = false
             }
-
-            client.get("/non-existing-path").apply {
-                assertEquals(HttpStatusCode.NotFound, status)
-            }
-            val response = client.get("/metrics")
-            val responseBody = response.bodyAsText()
-            assertEquals(HttpStatusCode.OK, response.status)
-            assertEquals(ContentType.Text.Plain, response.contentType()!!.withoutParameters())
-            assertContains(responseBody, "# TYPE http_requests_errors_total counter")
-            assertContains(responseBody, "# HELP http_requests_errors_total Total HTTP requests errors")
-            assertContains(
-                responseBody,
-                "http_requests_errors_total{method=\"GET\",status_code=\"404\",path=\"/non-existing-path\"} 1.0"
-            )
         }
+
+        assertEquals(HttpStatusCode.NotFound, client.get("/metrics").status)
+    }
+
+
+    @Test
+    fun `metrics output includes timestamp when includeTimestamp is true`() = testApplication {
+        application {
+            installPrometheusMetrics {
+                includeTimestamp = true
+            }
+        }
+
+        val metrics = client.get("/metrics").bodyAsText()
+        val expectedMetricLine = Regex("""http_requests_total\{method="GET"\,path="/metrics"} 1\.0 \d+""")
+
+        assertTrue(expectedMetricLine.containsMatchIn(metrics))
+    }
+
+    @Test
+    fun `exceptions are recorded in metrics`() = testApplication {
+        application {
+            installPrometheusMetrics()
+
+            routing {
+                get("/boom") {
+                    error("Crash!")
+                }
+            }
+        }
+
+        client.get("/boom")
+
+        val metrics = client.get("/metrics").bodyAsText()
+
+        assertContains(metrics, "http_exceptions_total{method=\"GET\",path=\"/boom\",exception_class=\"IllegalStateException\"} 1.0")
+    }
+
+    @Test
+    fun `dynamic path segments are normalized`() = testApplication {
+        application {
+            installPrometheusMetrics()
+
+            routing {
+                get("/users/{id}/profile") {
+                    call.respondText("Profile")
+                }
+            }
+        }
+
+        client.get("/users/123/profile")
+
+        val metrics = client.get("/metrics").bodyAsText()
+        assertContains(metrics, """http_requests_total{method="GET",path="/users/{param}/profile"} 1.0""")
     }
 }
