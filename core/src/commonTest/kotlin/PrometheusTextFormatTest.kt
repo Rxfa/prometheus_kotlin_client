@@ -1,7 +1,7 @@
-import io.github.kotlin.fibonacci.Counter
-import io.github.kotlin.fibonacci.PrometheusTextFormat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import io.github.rxfa.prometheus.core.Counter
+import io.github.rxfa.prometheus.core.PrometheusTextFormat
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

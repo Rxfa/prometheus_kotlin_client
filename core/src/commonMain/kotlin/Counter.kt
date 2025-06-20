@@ -1,4 +1,4 @@
-package io.github.kotlin.fibonacci
+package io.github.rxfa.prometheus.core
 
 import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic

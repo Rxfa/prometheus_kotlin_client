@@ -1,5 +1,5 @@
-import io.github.kotlin.fibonacci.Counter
-import io.github.kotlin.fibonacci.countExceptions
+import io.github.rxfa.prometheus.core.Counter
+import io.github.rxfa.prometheus.core.countExceptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

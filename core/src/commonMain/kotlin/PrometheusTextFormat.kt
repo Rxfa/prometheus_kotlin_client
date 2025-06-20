@@ -1,4 +1,4 @@
-package io.github.kotlin.fibonacci
+package io.github.rxfa.prometheus.core
 
 public class PrometheusTextFormat {
     public fun writeMetrics(collectors: List<Collector>, withTimestamp: Boolean = false): String {
