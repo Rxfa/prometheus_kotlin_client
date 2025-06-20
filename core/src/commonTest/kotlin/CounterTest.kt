@@ -9,6 +9,38 @@ import kotlinx.coroutines.test.runTest
 
 class CounterTest {
     @Test
+    fun `buildMetricName appends _total when missing`() {
+        val counter = Counter(
+            fullName = "http_requests",
+            help = "HTTP requests counter"
+        )
+
+        assertEquals("http_requests_total", counter.name)
+    }
+
+    @Test
+    fun `buildMetricName keeps _total if already present`() {
+        val counter = Counter(
+            fullName = "http_requests_total",
+            help = "HTTP requests counter"
+        )
+
+        assertEquals("http_requests_total", counter.name)
+    }
+
+    @Test
+    fun `buildMetricName removes existing _total before applying logic`() {
+        val counter = Counter(
+            fullName = "processed_items_total",
+            help = "Processed items",
+            unit = "seconds"
+        )
+
+        // `_total` is stripped before unit is handled, so we get processed_items_total
+        assertEquals("processed_items_seconds_total", counter.name)
+    }
+
+    @Test
     fun `counter starts on zero`(){
         val counter = Counter("points_earned_total", "Total points earned by users.")
         assertEquals(0.0, counter.get())

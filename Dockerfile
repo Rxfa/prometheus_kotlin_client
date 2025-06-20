@@ -8,4 +8,4 @@ RUN chmod +x ./gradlew
 
 EXPOSE 8080
 
-CMD ./gradlew :example:runFatJar
+CMD ./gradlew :ktor-example:runFatJar
