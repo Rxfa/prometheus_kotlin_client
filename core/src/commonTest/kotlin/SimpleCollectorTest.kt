@@ -15,8 +15,8 @@ class SimpleCollectorTest {
             initializeNoLabelsChild()
         }
 
-        override val suffixes: Set<String> = setOf("_total")
-        override val name: String = if(suffixes.any{ fullName.endsWith(it) }) fullName else fullName + "_total"
+        override val suffixes: Set<String> = setOf()
+        override val name: String = buildMetricName()
         override val type: Type = Type.UNKNOWN
 
         override fun newChild(): Child {
@@ -37,6 +37,25 @@ class SimpleCollectorTest {
         }
 
         fun getNoLabelsChild() = noLabelsChild
+    }
+
+    @Test
+    fun `invalid unit name throws`() {
+        assertFailsWith<IllegalArgumentException> {
+            DummyCollector("metric", "help", unit = "!!!")
+        }
+    }
+
+    @Test
+    fun `buildMetricName appends unit if not present`() {
+        val c = DummyCollector("request_duration", "help", unit = "seconds")
+        assertEquals("request_duration_seconds", c.name)
+    }
+
+    @Test
+    fun `buildMetricName does not double-append unit`() {
+        val c = DummyCollector("request_duration_seconds", "help", unit = "seconds")
+        assertEquals("request_duration_seconds", c.name)
     }
 
     @Test

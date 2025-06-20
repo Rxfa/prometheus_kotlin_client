@@ -1,11 +1,43 @@
 package io.github.rxfa.prometheus.core
 
 import kotlin.reflect.KClass
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.updateAndGet
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
+
+/**
+ * DSL-style function to build and register a [Counter] using a [CounterBuilder].
+ *
+ * Example:
+ * ```
+ * val requests = counter("http_requests_total") {
+ *     help("Total HTTP requests")
+ *     labelNames("method", "status")
+ * }
+ * ```
+ *
+ * @param name The base name of the counter metric.
+ * @param block Configuration block for the [CounterBuilder].
+ * @return A configured [Counter] instance.
+ */
 public fun counter(name: String, block: CounterBuilder.() -> Unit): Counter {
     return CounterBuilder(name).apply(block).build()
 }
 
+/**
+ * A [Counter] is a metric that only increases (monotonically), typically used for counting occurrences.
+ *
+ * This implementation supports optional creation of a `_created` time series and allows
+ * for use with and without labels.
+ *
+ * @param fullName The full name of the metric.
+ * @param help Help text describing what the counter measures.
+ * @param labelNames List of label names for this counter.
+ * @param unit The unit of the metric (e.g., "meters", "seconds").
+ * @param includeCreatedSeries If `true`, also emits a `_created` series per label set.
+ */
 public class Counter internal constructor(
     fullName: String,
     help: String,
@@ -14,7 +46,7 @@ public class Counter internal constructor(
     public val includeCreatedSeries: Boolean = false,
 ) : SimpleCollector<Counter.Child>(fullName, help, labelNames, unit) {
     override val suffixes: Set<String> = setOf("_total")
-    override val name: String = if(suffixes.any{ fullName.endsWith(it) }) fullName else fullName + "_total"
+    override val name: String = buildMetricName()
     override val type: Type = Type.COUNTER
 
     init {
@@ -25,24 +57,38 @@ public class Counter internal constructor(
         return Child()
     }
 
-    public inner class Child {
-        private var value = 0.0
+    override fun buildMetricName(): String {
+        var metricName: String = fullName.removeSuffix("_total")
+        if (unit.isNotBlank() && !metricName.endsWith(unit)) {
+            metricName = "${metricName}_${unit}"
+        }
+        return "${metricName}_total"
+    }
 
-        public fun inc(amount: Double) {
+    public inner class Child {
+        private var value = atomic(0.0.toRawBits())
+
+        public suspend fun inc(amount: Double) {
             require(amount >= 0) { "Value must be positive" }
-            value += amount
+            withContext(Dispatchers.Default){
+                 value.updateAndGet { currentBits ->
+                     val current = Double.fromBits(currentBits)
+                     val updated = current + amount
+                     updated.toBits()
+                }
+            }
         }
 
-        public fun inc(){
+        public suspend fun inc(){
             inc(1.0)
         }
 
-        public fun get(): Double = value
+        public fun get(): Double =  Double.fromBits(value.value)
     }
 
-    public fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
+    public suspend fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
 
-    public fun inc(): Unit? = noLabelsChild?.inc()
+    public suspend fun inc(): Unit? = noLabelsChild?.inc()
 
     public fun get(): Double = noLabelsChild?.get() ?: 0.0
 
@@ -59,7 +105,7 @@ public class Counter internal constructor(
     }
 }
 
-public fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+public suspend fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
     return try {
         block()
     } catch (e: Throwable) {
@@ -70,7 +116,7 @@ public fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out Throwab
     }
 }
 
-public fun <T> Counter.Child.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+public suspend fun <T> Counter.Child.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
     return try {
         block()
     } catch (e: Throwable) {
