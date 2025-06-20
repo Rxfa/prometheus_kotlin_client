@@ -104,8 +104,8 @@ class GaugeTest {
     @Test
     fun `Gauge Increments are Thread safe`(){
         runTest{
-            val reps = 100
-            val parl = 1000
+            val reps = 10_000
+            val parl = 3
             val gauge = Gauge(validFullName, validHelpText)
             coroutineScope {
                 List(parl) {

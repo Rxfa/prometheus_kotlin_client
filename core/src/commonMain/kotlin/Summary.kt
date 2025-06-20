@@ -190,8 +190,6 @@ public class Summary internal constructor(
     }
 
 
-
-
     public override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
         for ((labels, childs) in childMetrics) {
