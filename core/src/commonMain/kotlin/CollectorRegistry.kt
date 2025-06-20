@@ -5,12 +5,25 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-
+/**
+ * A thread-safe registry for [Collector] instances.
+ *
+ * The [CollectorRegistry] keeps track of registered collectors and provides
+ * utilities to register, unregister, clear, and list collectors.
+ *
+ * All operations are safe to use in concurrent and coroutine-based environments.
+ */
 public class CollectorRegistry {
     private val mutex = Mutex()
     private val collectorNames = mutableSetOf<String>()
     private var collectors = listOf<Collector>()
 
+    /**
+     * Registers a new [Collector] in this registry.
+     *
+     * @param collector The [Collector] to register.
+     * @throws IllegalStateException if a collector with the same full name is already registered.
+     */
     public suspend fun register(collector: Collector) {
         val collectorName = collector.fullName
         val addedToRegistry = mutex.withLock { collectorNames.add(collectorName) }
@@ -20,6 +33,13 @@ public class CollectorRegistry {
         mutex.withLock { this.collectors += collector }
     }
 
+    /**
+     * Unregisters a [Collector] from the registry.
+     *
+     * If the collector is not found, the call is silently ignored.
+     *
+     * @param collector The [Collector] to remove.
+     */
     public suspend fun unregister(collector: Collector) {
         val collectorName = collector.fullName
         mutex.withLock {
@@ -30,6 +50,9 @@ public class CollectorRegistry {
         }
     }
 
+    /**
+     * Clears all registered collectors from the registry.
+     */
     public suspend fun clear() {
         mutex.withLock {
             this.collectors = listOf()
@@ -37,15 +60,32 @@ public class CollectorRegistry {
         }
     }
 
+    /**
+     * Asynchronously collects all registered [Collector]s.
+     *
+     * Useful for use in exposition endpoints (e.g., `/metrics`).
+     *
+     * @return A list of currently registered [Collector]s.
+     */
     public suspend fun collect(): List<Collector> {
         return withContext(Dispatchers.Default) { getCollectors() }
     }
 
-    public companion object {
-        public val defaultRegistry: CollectorRegistry = CollectorRegistry()
-    }
-
+    /**
+     * Retrieves the current list of registered collectors.
+     *
+     * @return A snapshot list of registered [Collector]s.
+     */
     public suspend fun getCollectors(): List<Collector> {
         return mutex.withLock { collectors.toList() }
+    }
+
+    public companion object {
+        /**
+         * A globally accessible default registry instance.
+         *
+         * Use this for quick-start scenarios and typical single-application usage.
+         */
+        public val defaultRegistry: CollectorRegistry = CollectorRegistry()
     }
 }
