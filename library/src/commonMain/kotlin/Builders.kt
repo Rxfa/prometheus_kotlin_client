@@ -61,10 +61,13 @@ public class HistogramBuilder(name:String,private val buckets: List<Double>? = n
 
 public class SummaryBuilder internal constructor(
     name: String,
-    private val includeCreatedSeries: Boolean = false
+    private val includeCreatedSeries: Boolean = false,
+    private val quantiles: List<Quantiles.Quantile> = emptyList<Quantiles.Quantile>(),
+    private val maxAgeSeconds: Long = 60,
+    private val ageBuckets: Int = 5
 ) : MetricBuilder<Summary>(name) {
 
     override fun build(): Summary {
-        return Summary(name, _help, _labelNames, _unit, includeCreatedSeries)
+        return Summary(name, _help, _labelNames, _unit, includeCreatedSeries,quantiles, maxAgeSeconds, ageBuckets)
     }
 }

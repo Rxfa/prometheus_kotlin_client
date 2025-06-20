@@ -15,6 +15,25 @@ public data class ValueSummary(
 
 )
 
+public fun quantile(
+    quantile: Double,
+    error: Double = 0.01
+): Quantiles.Quantile {
+    if (quantile < 0.0 || quantile > 1.0) {
+        throw IllegalArgumentException("Quantile " + quantile + " invalid: Expected number between 0.0 and 1.0.")
+    }
+    if (error < 0.0 || error > 1.0) {
+        throw IllegalArgumentException("Error " + error + " invalid: Expected number between 0.0 and 1.0.")
+    }
+    return Quantiles.Quantile(quantile, error)
+}
+
+public fun quantiles(
+    vararg quantiles: Quantiles.Quantile
+): List<Quantiles.Quantile> {
+    return quantiles.toList()
+}
+
 public fun summaryQuantiles(
     name: String,
     block: SummaryBuilder.() -> Unit,
@@ -22,7 +41,7 @@ public fun summaryQuantiles(
     maxAgeSeconds: Long = 60,
     ageBuckets: Int = 5
 ): Summary {
-    return SummaryBuilder(name,quantiles,maxAgeSeconds,ageBuckets).apply {block}.build()
+    return SummaryBuilder(name,false,quantiles,maxAgeSeconds,ageBuckets).apply {block}.build()
 }
 
 public fun summary(
@@ -49,9 +68,9 @@ public class Summary internal constructor(
     labelNames: List<String> = emptyList(),
     unit: String = "",
     includeCreatedSeries: Boolean = false,
-    private val quantiles: List<Quantiles.Quantile> = emptyList(),
-    private val maxAgeSeconds: Long = 60,
-    private val ageBuckets: Int = 5
+    private val quantiles: List<Quantiles.Quantile>,
+    private val maxAgeSeconds: Long ,
+    private val ageBuckets: Int
 ): SimpleCollector<Summary.Child>(fullName, help, labelNames, unit) {
 
     override val suffixes: Set<String> = setOf()
@@ -157,6 +176,17 @@ public class Summary internal constructor(
 
         }
 
+    }
+    public suspend fun observe(value: Double) {
+        noLabelsChild?.observe(value)
+    }
+
+    public suspend fun time(runnable: Runnable): Double {
+        return noLabelsChild?.time(runnable) ?: 0.0
+    }
+
+    public fun get(): ValueSummary {
+        return noLabelsChild?.get() ?: throw IllegalStateException("No labels child is not initialized.")
     }
 
 

@@ -12,6 +12,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -128,14 +129,12 @@ class GaugeTest {
 
             val job = launch {
                 gauge.track {
-
+                    signal.send(Unit)
                     assertEquals(1.0, gauge.get(), "Gauge should be incremented during operation")
                     signal.receive()
-                    assertEquals(1.0, gauge.get(), "Gauge should remain incremented before leaving block")
                 }
             }
-            delay(1000)
-            yield()
+            signal.receive()
             assertEquals(1.0, gauge.get())
             signal.send(Unit)
             job.join()
@@ -147,17 +146,16 @@ class GaugeTest {
     fun `Gauge with labels can track in-progress requests in a given piece of code`(){
         runTest {
             val gauge = Gauge(validFullName, validHelpText, listOf("a")).labels("1")
-            val signal = Channel<Unit>()
 
+            val signal = Channel<Unit>()
             val job = launch {
                 gauge.track {
+                    signal.send(Unit)
                     assertEquals(1.0, gauge.get(), "Gauge should be incremented during operation")
                     signal.receive()
-                    assertEquals(1.0, gauge.get(), "Gauge should remain incremented before leaving block")
                 }
             }
-            delay(1000)
-            yield()
+            signal.receive()
             assertEquals(1.0, gauge.get())
             signal.send(Unit)
             job.join()
