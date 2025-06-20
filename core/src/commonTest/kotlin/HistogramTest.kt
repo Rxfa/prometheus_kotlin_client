@@ -96,8 +96,8 @@ class HistogramTest {
         /**
          * coroutines can't be higher than 3 because ios has a limit of 3 processors
          */
-        val repetitions = 1000
-        val coroutines = 100
+        val repetitions = 10_000
+        val coroutines = 3
         coroutineScope {
             repeat(coroutines) {
                 async {
