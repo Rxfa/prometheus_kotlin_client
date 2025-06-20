@@ -93,14 +93,16 @@ class HistogramTest {
     @Test
     fun `observe is thread safe`() = runTest {
         val histogram = linearHistogramBuckets("concurrent_observe", {}, 0.0, 1.0, 2)
-        val reps = 1000
-        val workers = 100
-
+        /**
+         * coroutines can't be higher than 3 because ios has a limit of 3 processors
+         */
+        val repetitions = 1000
+        val coroutines = 100
         coroutineScope {
-            repeat(workers) {
+            repeat(coroutines) {
                 async {
 
-                    repeat(reps) {
+                    repeat(repetitions) {
                         histogram.observe(0.5)
                     }
 
@@ -109,7 +111,7 @@ class HistogramTest {
         }
 
         val value = histogram.get()
-        assertEquals(reps * workers.toDouble(), value.buckets.last())
+        assertEquals(repetitions * coroutines.toDouble(), value.buckets.last())
     }
 
     @Test

@@ -101,22 +101,27 @@ class GaugeTest {
         }
     }
 
+
+
     @Test
     fun `Gauge Increments are Thread safe`(){
         runTest{
-            val reps = 10_000
-            val parl = 3
+            /**
+             * coroutines can't be higher than 3 because ios has a limit of 3 processors
+             */
+            val repetitions = 10_000
+            val coroutines = 3
             val gauge = Gauge(validFullName, validHelpText)
             coroutineScope {
-                List(parl) {
+                List(coroutines) {
                     async {
-                        repeat(reps) {
+                        repeat(repetitions) {
                             gauge.inc()
                         }
                     }
                 }.awaitAll()
             }
-            assertEquals(reps * parl.toDouble(), gauge.get())
+            assertEquals(repetitions * coroutines.toDouble(), gauge.get())
         }
 
     }
@@ -213,23 +218,28 @@ class GaugeTest {
         }
     }
 
-
+    /**
+     * coroutines can't be higher than 3 because ios has a limit of 3 processors
+     */
     @Test
     fun `Gauge Decrements are Thread safe`(){
         runTest{
-            val reps = 100
-            val parl = 1000
+            /**
+             * coroutines can't be higher than 3 because ios has a limit of 3 processors
+             */
+            val repetitions = 10_000
+            val coroutines = 3
             val gauge = Gauge(validFullName, validHelpText)
             coroutineScope {
-                List(parl) {
+                List(coroutines) {
                     async {
-                        repeat(reps) {
+                        repeat(repetitions) {
                             gauge.dec()
                         }
                     }
                 }.awaitAll()
             }
-            assertEquals(-reps * parl.toDouble(), gauge.get())
+            assertEquals(-repetitions * coroutines.toDouble(), gauge.get())
         }
 
     }

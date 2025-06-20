@@ -80,13 +80,16 @@ class SummaryTest {
     fun `observe is thread safe`() = runTest {
         val summary = summary("concurrent_summary") {}
 
-        val reps = 1000
-        val workers = 100
+        /**
+         * coroutines can't be higher than 3 because ios has a limit of 3 processors
+         */
+        val repetitions = 1000
+        val coroutines = 3
 
         coroutineScope {
-            repeat(workers) {
+            repeat(coroutines) {
                 launch {
-                    repeat(reps) {
+                    repeat(repetitions) {
                         summary.observe(1.0)
                     }
                 }
@@ -94,8 +97,8 @@ class SummaryTest {
         }
 
         val value = summary.get()
-        assertEquals((reps * workers).toDouble(), value.count)
-        assertEquals((reps * workers).toDouble(), value.sum)
+        assertEquals((repetitions * coroutines).toDouble(), value.count)
+        assertEquals((repetitions * coroutines).toDouble(), value.sum)
     }
 
     @Test

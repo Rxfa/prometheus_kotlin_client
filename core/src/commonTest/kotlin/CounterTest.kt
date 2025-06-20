@@ -154,22 +154,27 @@ class CounterTest {
         }
     }
 
+
+
     @Test
     fun `counter increments are thread safe`() {
         runBlocking {
-            val reps = 1000
-            val parl = 10000
+            /**
+             * coroutines can't be higher than 3 because ios has a limit of 3 processors
+             */
+            val repetitions = 10_000
+            val coroutines = 3
             val counter = Counter("points_earned_total", "Total points earned by users.")
             coroutineScope {
-                List(parl) {
+                List(coroutines) {
                     async {
-                        repeat(reps) {
+                        repeat(repetitions) {
                             counter.inc()
                         }
                     }
                 }.awaitAll()
             }
-            assertEquals(reps * parl.toDouble(), counter.get())
+            assertEquals(repetitions * coroutines.toDouble(), counter.get())
         }
     }
 }
