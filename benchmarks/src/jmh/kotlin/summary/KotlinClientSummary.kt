@@ -1,6 +1,10 @@
 package summary
 
-import io.github.kotlin.fibonacci.*
+
+import io.github.rxfa.prometheus.core.Summary
+import io.github.rxfa.prometheus.core.quantile
+import io.github.rxfa.prometheus.core.quantiles
+import io.github.rxfa.prometheus.core.summaryQuantiles
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel

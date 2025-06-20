@@ -1,4 +1,4 @@
-package io.github.kotlin.fibonacci.exemplars
+package io.github.rxfa.prometheus.core
 
 public class Exemplar {
     private val labels:List<String>

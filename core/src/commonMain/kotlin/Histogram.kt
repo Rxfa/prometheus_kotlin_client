@@ -1,8 +1,5 @@
-package io.github.kotlin.fibonacci
+package io.github.rxfa.prometheus.core
 
-import io.github.kotlin.fibonacci.exemplars.Exemplar
-import io.github.kotlin.fibonacci.exemplars.ExemplarConfig
-import io.github.kotlin.fibonacci.exemplars.HistogramExemplarSample
 import kotlinx.atomicfu.AtomicLong
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic

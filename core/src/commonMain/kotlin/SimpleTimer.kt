@@ -1,4 +1,4 @@
-package io.github.kotlin.fibonacci
+package io.github.rxfa.prometheus.core
 
 import kotlinx.datetime.Clock
 import kotlin.time.TimeSource

@@ -1,7 +1,7 @@
 package gauge
-import io.github.kotlin.fibonacci.Counter
-import io.github.kotlin.fibonacci.Gauge
-import io.github.kotlin.fibonacci.gauge
+
+import io.github.rxfa.prometheus.core.Gauge
+import io.github.rxfa.prometheus.core.gauge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel

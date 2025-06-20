@@ -1,4 +1,8 @@
-import io.github.kotlin.fibonacci.*
+
+import io.github.rxfa.prometheus.core.quantile
+import io.github.rxfa.prometheus.core.quantiles
+import io.github.rxfa.prometheus.core.summary
+import io.github.rxfa.prometheus.core.summaryQuantiles
 import kotlin.test.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.runTest

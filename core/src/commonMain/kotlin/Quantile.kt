@@ -1,4 +1,4 @@
-package io.github.kotlin.fibonacci
+package io.github.rxfa.prometheus.core
 
 // The original implementation was copied from
 // https://github.com/prometheus/client_java/blob/simpleclient/simpleclient/src/main/java/io/prometheus/client/CKMSQuantiles.java#L54C1-L57C8

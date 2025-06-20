@@ -9,7 +9,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":library"))
+    implementation(project(":core"))
     implementation(libs.jmh.core)
     annotationProcessor(libs.jmh.generator)
     implementation(libs.prometheus.client)

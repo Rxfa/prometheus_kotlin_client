@@ -1,4 +1,4 @@
-package io.github.kotlin.fibonacci.exemplars
+package io.github.rxfa.prometheus.core
 
 import kotlin.concurrent.Volatile
 

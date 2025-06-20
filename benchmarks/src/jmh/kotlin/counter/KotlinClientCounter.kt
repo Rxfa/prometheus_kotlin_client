@@ -1,7 +1,7 @@
 package counter
 
-import io.github.kotlin.fibonacci.Counter
-import io.github.kotlin.fibonacci.counter
+import io.github.rxfa.prometheus.core.Counter
+import io.github.rxfa.prometheus.core.counter
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel

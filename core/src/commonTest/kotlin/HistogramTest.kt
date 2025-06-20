@@ -1,4 +1,6 @@
-import io.github.kotlin.fibonacci.*
+
+import io.github.rxfa.prometheus.core.histogramBuckets
+import io.github.rxfa.prometheus.core.linearHistogramBuckets
 import kotlin.test.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.runTest

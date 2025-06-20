@@ -1,7 +1,7 @@
 package histogram
 
-import io.github.kotlin.fibonacci.Histogram
-import io.github.kotlin.fibonacci.histogramBuckets
+import io.github.rxfa.prometheus.core.Histogram
+import io.github.rxfa.prometheus.core.histogramBuckets
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
