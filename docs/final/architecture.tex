@@ -140,7 +140,7 @@ The metric types derive from common abstract base classes to promote code reuse 
     +----------+ +-------+ +----------+
                   |
               +---------+
-              | Summary | (direct subclass of Collector)
+              | Summary | (subclass of SimpleCollector)
               +---------+
 \end{verbatim}
 
@@ -157,7 +157,7 @@ It supports labeled child instances to track counts across different dimensions 
 \begin{itemize}
     \item \texttt{inc()} — Increment the counter by 1.
     \item \texttt{inc(amount: Double)} — Increment the counter by a specified positive amount.
-    \item \texttt{clear()} — Reset all labeled children to zero.
+    \item \texttt{get()} — Get the current value of the counter.
 \end{itemize}
 
 Example usage:
@@ -182,7 +182,8 @@ A \texttt{Gauge} represents a value that can go up and down, allowing tracking o
     \item \texttt{dec()} — Decrement the gauge by 1.
     \item \texttt{dec(amount: Double)} — Decrement the gauge by a specified amount.
     \item \texttt{set(value: Double)} — Set the gauge to an explicit value.
-    \item \texttt{clear()} — Reset all labeled children.
+    \item \texttt{setToCurrentTime()} — Set the gauge to the current Unix time in seconds.
+    \item \texttt{get()} — Get the current value of the gauge.
 \end{itemize}
 
 Example usage:
@@ -310,10 +311,134 @@ Overall, this layered design—with internal builder classes and external \ac{DS
 of concerns between metric construction and user interaction, enhancing modularity and maintainability while embracing Kotlin idioms for a modern instrumentation library.
 
 
-\section{Collector Registry}
+\section{Collector Registry}\label{sec:collector-registry}
 
-\lipsum[1]
+The \texttt{CollectorRegistry} class is the central component responsible for managing all metric collectors in the system.
+It keeps track of every registered metric and enables the collection of their current state when an exposition is triggered.
 
-\section{Exposition}
+This follows the standard model proposed by Prometheus, where collectors (such as counters, histograms, etc.) are registered into a shared registry and later scraped together.
 
-\lipsum[1]
+\begin{itemize}
+    \item Metrics are explicitly registered using \texttt{CollectorRegistry.register()}.
+    \item A global singleton \texttt{defaultRegistry} is provided for convenience in most applications.
+    \item The method \texttt{collect()} retrieves a snapshot of all current samples from the registered collectors.
+\end{itemize}
+
+The registry is designed to be thread-safe and coroutine-friendly, ensuring safe access from concurrent environments.
+Its most common usage is as a backend for metric exposition, such as via \texttt{PrometheusExporter}.
+
+\begin{figure}[h]
+    \begin{lstlisting}
+val registry = CollectorRegistry.defaultRegistry
+registry.register(myCounter)
+val samples = registry.collect()
+    \end{lstlisting}
+    \caption{Collector registration and sample collection}
+\end{figure}
+
+Although applications typically rely on the singleton \texttt{defaultRegistry}, custom registries can be created as needed. This is useful for testing, modular system design, or scenarios requiring metric isolation (e.g., multi-tenant services).
+
+\begin{figure}[h]
+    \begin{lstlisting}
+val myCounter = counter("example_counter") {
+    help("An example metric")
+}
+CollectorRegistry.defaultRegistry.register(myCounter)
+    \end{lstlisting}
+    \caption{Using the default registry for registration}
+\end{figure}
+
+
+\section{Exposition}\label{sec:exposition}
+
+The exposition component of the library is responsible for converting the collected metrics into the Prometheus 0.0.4 text exposition format, which can be scraped by Prometheus via HTTP. This conversion is handled by the \texttt{PrometheusTextFormat} class and exposed to users via the \texttt{PrometheusExporter}.
+
+\subsection{Text Format Overview}\label{subsec:text-format-overview}
+
+Prometheus expects metrics to be exported as plaintext in a specific structure.
+A typical metric exposition includes:
+
+\begin{itemize}
+    \item A \texttt{\# TYPE} line specifying the metric type (e.g., counter, gauge).
+    \item An optional \texttt{\# UNIT} line.
+    \item A \texttt{\# HELP} line describing the metric.
+    \item One or more data lines containing the metric name, labels, value, and optionally a timestamp.
+\end{itemize}
+
+\begin{figure}[h]
+    \begin{lstlisting}
+# TYPE http_requests_total counter
+# UNIT http_requests_total requests
+# HELP http_requests_total Total number of HTTP requests received
+http_requests_total{method="GET",status="200"} 1243
+    \end{lstlisting}
+    \caption{Example metric exposition output}
+\end{figure}
+
+\subsection{PrometheusTextFormat}\label{subsec:prometheustextformat}
+
+The \texttt{PrometheusTextFormat} class provides the functionality to encode a list of \texttt{Collector} instances into a single \texttt{String} in the exposition format.
+Its main public method is:
+
+\begin{itemize}
+    \item \texttt{fun writeMetrics(collectors: List<Collector>, withTimestamp: Boolean = false): String}
+\end{itemize}
+
+This method appends, for each collector:
+
+\begin{enumerate}
+    \item The metadata lines (\texttt{\# TYPE}, \texttt{\# UNIT}, \texttt{\# HELP}).
+    \item The metric sample lines, each representing one time series with optional labels.
+    \item If \texttt{withTimestamp} is true, the internal timestamp (in milliseconds since epoch) of each sample is included.
+\end{enumerate}
+
+Internally, it uses helper functions:
+
+\begin{itemize}
+    \item \texttt{writeMetricMetadata(collector)}: formats and appends the metadata.
+    \item \texttt{writeMetricData(collector, withTimestamp)}: serializes all samples of a collector, including label formatting and optional timestamps.
+\end{itemize}
+
+Each sample is written as:
+
+\begin{figure}[h]
+    \begin{lstlisting}
+metric_name{label1="value1",label2="value2"} 123.456 [timestamp]
+    \end{lstlisting}
+    \caption{Metric sample format}
+\end{figure}
+
+Labels are quoted and escaped if needed, and empty label sets are still enclosed in braces (i.e., \texttt{\{\}}).
+
+\subsection{PrometheusExporter}\label{subsec:prometheusexporter}
+
+The \texttt{PrometheusExporter} class serves as the public entry point for metric exposition.
+It wraps a \texttt{CollectorRegistry} (defaulting to the global registry) and uses \texttt{PrometheusTextFormat} to serialize its contents.
+
+Its main function:
+
+\begin{itemize}
+    \item \texttt{suspend fun scrape(withTimestamp: Boolean = false): String}
+\end{itemize}
+
+This suspendable method collects all registered collectors, serializes them via \texttt{writeMetrics()}, and returns the resulting string.
+This makes it easy to integrate into coroutine-based HTTP frameworks.
+
+\subsection{Timestamp Support}\label{subsec:timestamp-support}
+
+By default, the exposition omits timestamps to align with Prometheus's preference for assigning scrape time itself.
+However, the library tracks timestamps internally for each sample, and the user can enable them explicitly.
+
+This allows applications that require precise client-side timing to expose that data without altering the core logic.
+
+\subsection{Summary}\label{subsec:summary}
+
+The exposition layer provides a clean and extensible mechanism for emitting Prometheus-compatible metrics.
+The responsibilities are well-separated:
+
+\begin{itemize}
+    \item \texttt{PrometheusTextFormat} focuses on format correctness.
+    \item \texttt{PrometheusExporter} simplifies access for application developers.
+\end{itemize}
+
+This modular approach ensures that the exposition logic can be reused across different backends and integrated into various HTTP frameworks without duplicating formatting logic.
