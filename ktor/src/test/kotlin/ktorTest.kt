@@ -3,7 +3,6 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
-import kotlinx.coroutines.runBlocking
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -12,11 +11,12 @@ import kotlin.test.assertTrue
 import io.github.rxfa.prometheus.ktor.installPrometheusMetrics
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.test.runTest
 
 class KtorTest{
     @BeforeTest
     fun clearMetrics() {
-        runBlocking {
+        runTest {
             CollectorRegistry.defaultRegistry.clear()
         }
     }
@@ -33,14 +33,15 @@ class KtorTest{
             }
         }
 
-        client.get("/hello").apply {
-            assertEquals(HttpStatusCode.OK, status)
-        }
-
         client.get("/metrics").apply {
             assertEquals(HttpStatusCode.OK, status)
             assertContains(bodyAsText(), "http_requests_total")
         }
+
+        client.get("/hello").apply {
+            assertEquals(HttpStatusCode.OK, status)
+        }
+
     }
 
     @Test
