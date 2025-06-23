@@ -1,8 +1,10 @@
 package io.github.rxfa.prometheus.http
 
 import io.github.rxfa.prometheus.ktor.installPrometheusMetrics
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
+import io.ktor.server.engine.EmbeddedServer
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
 
 /**
  * Configuration for the Prometheus metrics endpoint.

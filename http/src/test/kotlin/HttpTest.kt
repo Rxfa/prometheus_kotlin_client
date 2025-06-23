@@ -1,17 +1,23 @@
 import io.github.rxfa.prometheus.core.CollectorRegistry
 import io.github.rxfa.prometheus.http.httpServer
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.request.get
+import io.ktor.client.request.port
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.engine.EmbeddedServer
+import io.ktor.server.netty.NettyApplicationEngine
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import java.net.ServerSocket
-import kotlin.test.*
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 fun findFreePort(): Int = ServerSocket(0).use { it.localPort }
 
