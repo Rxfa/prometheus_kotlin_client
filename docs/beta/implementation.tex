@@ -372,6 +372,238 @@ Internally, this uses the injected \texttt{Clock} instance (defaulting to \textt
 %---------------------------
 
 
+\section{Histogram Metric Implementation}
+
+The \texttt{Histogram} metric implementation models the distribution of observations by tracking both their count and the sum of all observed values. It uses a fixed set of configurable buckets to group values and is well-suited for timing operations, request latencies, payload sizes, etc.
+
+\subsection{Construction and Registration}
+
+Users can construct histograms declaratively using the provided DSL functions:
+
+\begin{verbatim}
+val latency = histogram("http_request_duration_seconds") {
+    help("Request latency in seconds")
+    labelNames("method", "endpoint")
+}
+\end{verbatim}
+
+Multiple bucket strategies are available:
+\begin{itemize}
+    \item \texttt{histogramBuckets(...)} – custom bucket boundaries
+    \item \texttt{linearHistogramBuckets(...)} – evenly spaced buckets
+    \item \texttt{exponentialHistogramBuckets(...)} – exponentially increasing bucket widths
+\end{itemize}
+
+Each function delegates to \texttt{HistogramBuilder}, which validates and registers the final \texttt{Histogram} instance.
+
+\subsection{Metric Semantics and Structure}
+
+The \texttt{Histogram} class extends \texttt{SimpleCollector} and emits three series per label set:
+\begin{itemize}
+    \item \texttt{\_bucket} – cumulative count of observations per bucket
+    \item \texttt{\_sum} – sum of all observed values
+    \item \texttt{\_count} – total number of observations
+\end{itemize}
+
+The final bucket is automatically extended to include \texttt{+\(\infty\)} if not explicitly present. The label \texttt{le} (less-than-or-equal) is reserved and disallowed as a user-defined label.
+
+\subsection{Atomic Value Handling}
+
+Each histogram \texttt{Child} maintains:
+\begin{itemize}
+    \item an atomic sum of all observed values (using \texttt{Double.toRawBits()} stored in an \texttt{AtomicLong}),
+    \item a per-bucket array of atomic counters (\texttt{AtomicLong}) tracking the number of observations.
+\end{itemize}
+
+Example for sum tracking:
+\begin{verbatim}
+sum.updateAndGet { bits ->
+    val current = Double.fromBits(bits)
+    val updated = current + value
+    updated.toRawBits()
+}
+\end{verbatim}
+
+This design ensures atomic updates in concurrent environments without using CAS loops or locks.
+
+\subsection{Bucket Recording Logic}
+
+When a value is observed, it is recorded in the first bucket whose upper bound is greater than or equal to the value. This is done atomically within the \texttt{Dispatchers.Default} context:
+
+\begin{verbatim}
+for (i in upperBounds.indices) {
+    if (value <= upperBounds[i]) {
+        cumulativeCounts[i].getAndIncrement()
+        break
+    }
+}
+\end{verbatim}
+
+Each observation also updates the running sum of all values.
+
+\subsection{Timing Utility}
+
+The histogram provides utilities for measuring and recording durations:
+
+\begin{itemize}
+    \item \texttt{startTimer()} – returns a \texttt{Timer} that captures duration from start
+    \item \texttt{observeDuration()} – records elapsed time in seconds
+    \item \texttt{time\{...\}} – runs a block and records execution time
+\end{itemize}
+
+\begin{verbatim}
+val timer = histogram.labels("GET", "/api").startTimer()
+// ... do something ...
+timer.observeDuration()
+\end{verbatim}
+
+This makes histograms especially useful for measuring latencies.
+
+\subsection{Concurrency Model}
+
+All observation operations are dispatched on \texttt{Dispatchers.Default} to ensure concurrency safety and performance in multi-threaded environments. No synchronization primitives like mutexes are used; instead, atomic operations provide safe concurrent access.
+
+\subsection{Label Handling and Sample Collection}
+
+Like other collectors, histograms use a map of label sets to \texttt{Child} instances. The \texttt{collect()} function emits:
+
+\begin{itemize}
+    \item a \texttt{\_bucket} sample for each bucket and label set,
+    \item a \texttt{\_sum} sample with the total observed value,
+    \item a \texttt{\_count} sample for the total observation count.
+\end{itemize}
+
+\begin{verbatim}
+http_request_duration_seconds_bucket{method="GET", endpoint="/"} 4
+http_request_duration_seconds_bucket{method="GET", endpoint="/", le="0.5"} 7
+http_request_duration_seconds_count{method="GET", endpoint="/"} 11
+http_request_duration_seconds_sum{method="GET", endpoint="/"} 3.42
+\end{verbatim}
+
+\subsection{Labeled vs Unlabeled Histogram Observation}
+
+Histograms support both labeled and unlabeled usage:
+
+\paragraph{Unlabeled Histogram:}
+\begin{verbatim}
+val durations = histogram("job_duration_seconds") { help("Job durations") }
+durations.observe(1.23)
+\end{verbatim}
+
+\paragraph{Labeled Histogram:}
+\begin{verbatim}
+val durations = histogram("job_duration_seconds") {
+    help("Job durations")
+    labelNames("job", "status")
+}
+durations.labels("backup", "success").observe(0.75)
+\end{verbatim}
+
+Each label set maintains its own independent observation state. This allows for detailed breakdowns, such as per-endpoint or per-method latency.
+
+\subsection{Histogram State Retrieval}
+
+Each \texttt{Child} exposes its current state through \texttt{get()}, returning a \texttt{ValueHistogram}:
+
+\begin{verbatim}
+val state = histogram.labels("GET", "/").get()
+println(state.sum)
+println(state.buckets)
+\end{verbatim}
+
+This is useful for introspection or exporting metrics to other formats.
+
+\subsection{Bucket Strategies and Utilities}
+
+The histogram DSL provides several utility functions to define bucket boundaries that determine how values are grouped into time series. These functions help users choose appropriate bucket layouts for their data, such as fixed-width ranges or logarithmic distributions.
+
+\paragraph{1. \texttt{histogramBuckets(...)} – Custom Buckets}
+
+This method allows users to explicitly define the upper bounds of each bucket as a list of \texttt{Double} values.
+
+\begin{verbatim}
+histogramBuckets(listOf(0.1, 0.5, 1.0, 2.5, 5.0, 10.0))
+\end{verbatim}
+
+\textbf{Validation Rules}:
+\begin{itemize}
+    \item The list must be non-empty.
+    \item Values must be strictly increasing (sorted and unique).
+    \item The final bucket (i.e., +\(\infty\)) is automatically appended and does not need to be included.
+\end{itemize}
+
+This gives users full control over the distribution granularity.
+
+\paragraph{2. \texttt{linearHistogramBuckets(...)} – Linearly Spaced Buckets}
+
+This method generates buckets that are equally spaced. It requires:
+
+\begin{itemize}
+    \item \texttt{start} – the lower bound of the first bucket.
+    \item \texttt{width} – the fixed interval between bucket boundaries.
+    \item \texttt{count} – the number of buckets to generate.
+\end{itemize}
+
+\begin{verbatim}
+linearHistogramBuckets(start = 0.0, width = 1.0, count = 5)
+\end{verbatim}
+
+This will generate buckets with upper bounds: \texttt{[1.0, 2.0, 3.0, 4.0, 5.0]}, plus the final \texttt{+\(\infty\)} bucket.
+
+\textbf{Validation Rules}:
+\begin{itemize}
+    \item \texttt{count} must be positive.
+    \item \texttt{width} must be strictly greater than zero.
+    \item \texttt{start} may be any finite \texttt{Double} value.
+\end{itemize}
+
+This layout is ideal when your values fall within a bounded linear range, such as number of retries or file sizes in MB.
+
+\paragraph{3. \texttt{exponentialHistogramBuckets(...)} – Exponentially Spaced Buckets}
+
+This method produces buckets whose boundaries grow exponentially. It is defined by:
+
+\begin{itemize}
+    \item \texttt{start} – the lower bound of the first bucket (must be > 0).
+    \item \texttt{factor} – the multiplication factor between successive bucket boundaries (must be > 1.0).
+    \item \texttt{count} – the number of buckets to generate.
+\end{itemize}
+
+\begin{verbatim}
+exponentialHistogramBuckets(start = 0.001, factor = 2.0, count = 5)
+\end{verbatim}
+
+This will produce boundaries:
+\texttt{[0.001, 0.002, 0.004, 0.008, 0.016]}, plus \texttt{+\(\infty\)}.
+
+\textbf{Validation Rules}:
+\begin{itemize}
+    \item \texttt{start} must be strictly greater than zero.
+    \item \texttt{factor} must be greater than 1.0.
+    \item \texttt{count} must be a positive integer.
+\end{itemize}
+
+This layout is excellent for timing or latency distributions where small values are common, but outliers are orders of magnitude larger.
+
+\vspace{0.5em}
+\noindent
+\textbf{Example Use Case:}
+\begin{verbatim}
+val latency = histogram("request_latency_seconds") {
+    help("Request duration in seconds")
+    labelNames("path")
+    exponentialHistogramBuckets(start = 0.001, factor = 2.0, count = 10)
+}
+\end{verbatim}
+
+\paragraph{Final Bucket Inclusion}
+
+Regardless of which strategy is used, the implementation always appends a final implicit bucket with upper bound \texttt{+\(\infty\)} to ensure that every possible observation is recorded.
+
+
+
+
+
 %---------------------------
 % SUMMARY
 %---------------------------
