@@ -1,7 +1,6 @@
 package io.github.rxfa.prometheus.core
 
 import kotlinx.atomicfu.AtomicLong
-import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.*
@@ -225,13 +224,12 @@ public class Histogram internal constructor(
 
         public constructor(buckets: List<Double>) {
             this.upperBounds = buckets
-            this.cumulativeCounts = mutableListOf<AtomicLong>()
-            for (i in buckets.indices) {
-                cumulativeCounts.add(atomic(0L))
+            this.cumulativeCounts = Array<AtomicLong>(buckets.size){
+                atomic(0L)
             }
         }
         private val upperBounds: List<Double>
-        private val cumulativeCounts: MutableList<AtomicLong>
+        private val cumulativeCounts: Array<AtomicLong>
         private val sum = atomic(0.0.toRawBits())
         private val created = Clock.System.now().toEpochMilliseconds()
 
