@@ -115,14 +115,14 @@ class HistogramTest {
     }
 
     @Test
-    fun `timer with exemplar labels tracks duration`() {
+    fun `timer with labels tracks duration`() {
         runTest {
             val histogram = linearHistogramBuckets("timed_with_labels", {}, 0.0, 1.0, 10)
-            val duration = histogram.timeWithExemplar(Runnable {
+            val duration = histogram.time(Runnable {
                 runBlocking {
                     delay(500)
                 }
-            }, listOf("labelA"))
+            })
 
             assertTrue(duration >= 0.5)
         }
