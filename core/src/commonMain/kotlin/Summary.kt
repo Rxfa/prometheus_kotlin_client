@@ -7,14 +7,14 @@ import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 
-public data class ValueSummary(
-    val count: Double,
-    val sum : Double,
-    val quantiles: Map<Double,Double>?,
-    val created: Long
-
-)
-
+/**
+ * Creates a quantile for use in summaries.
+ *
+ * @param quantile The desired quantile value (e.g., 0.5 for median). Must be between 0.0 and 1.0.
+ * @param error The acceptable error margin for the quantile. Defaults to 0.01. Must be between 0.0 and 1.0.
+ * @return A [Quantiles.Quantile] instance representing the specified quantile and error.
+ * @throws IllegalArgumentException if [quantile] or [error] is outside the range [0.0, 1.0].
+ */
 public fun quantile(
     quantile: Double,
     error: Double = 0.01
@@ -28,12 +28,28 @@ public fun quantile(
     return Quantiles.Quantile(quantile, error)
 }
 
+/**
+ * Converts a variable number of quantiles into a list.
+ *
+ * @param quantiles A variable number of [Quantiles.Quantile] instances.
+ * @return A [List] containing the provided quantiles.
+ */
 public fun quantiles(
     vararg quantiles: Quantiles.Quantile
 ): List<Quantiles.Quantile> {
     return quantiles.toList()
 }
 
+/**
+ * Creates a summary with predefined quantiles.
+ *
+ * @param name The name of the summary.
+ * @param block A configuration block for the summary.
+ * @param quantiles A list of [Quantiles.Quantile] to include in the summary.
+ * @param maxAgeSeconds The maximum age of observations in seconds. Defaults to 60.
+ * @param ageBuckets The number of buckets to divide the observation window into. Defaults to 5.
+ * @return A configured [Summary] instance.
+ */
 public fun summaryQuantiles(
     name: String,
     block: SummaryBuilder.() -> Unit,
@@ -44,6 +60,13 @@ public fun summaryQuantiles(
     return SummaryBuilder(name,false,quantiles,maxAgeSeconds,ageBuckets).apply {block}.build()
 }
 
+/**
+ * Creates a summary without predefined quantiles.
+ *
+ * @param name The name of the summary.
+ * @param block A configuration block for the summary.
+ * @return A configured [Summary] instance.
+ */
 public fun summary(
     name: String,
     block: SummaryBuilder.() -> Unit
@@ -51,17 +74,36 @@ public fun summary(
     return SummaryBuilder(name).apply(block).build()
 }
 
-public fun Summary.addQuantile(quantile: Double, error: Double){
-    if (quantile < 0.0 || quantile > 1.0) {
-        throw IllegalArgumentException("Quantile " + quantile + " invalid: Expected number between 0.0 and 1.0.");
-    }
-    if (error < 0.0 || error > 1.0) {
-        throw IllegalArgumentException("Error " + error + " invalid: Expected number between 0.0 and 1.0.");
-    }
-    this.addQuantile(quantile, error)
-}
+/**
+ * Represents the current state of a summary, including the count, sum, quantiles, and creation timestamp.
+ *
+ * @property count The total number of observations.
+ * @property sum The sum of all observed values.
+ * @property quantiles A map of quantile values to their observed values, or null if no quantiles are defined.
+ * @property created The timestamp when the summary was created.
+ */
+public data class ValueSummary(
+    val count: Double,
+    val sum : Double,
+    val quantiles: Map<Double,Double>?,
+    val created: Long
 
+)
 
+/**
+ * A [Summary] is a metric that provides statistical information about observed values, including quantiles.
+ *
+ * This implementation supports quantiles, sum, count, and allows for time-based observation tracking.
+ *
+ * @param fullName The full name of the summary metric.
+ * @param help A description of what the summary measures.
+ * @param labelNames Optional list of label names for the summary.
+ * @param unit Optional unit of measurement for the summary.
+ * @param includeCreatedSeries If `true`, also emits a `_created` series per label set.
+ * @param quantiles A list of [Quantiles.Quantile] to include in the summary.
+ * @param maxAgeSeconds The maximum age of observations in seconds. Defaults to 60.
+ * @param ageBuckets The number of buckets to divide the observation window into. Defaults to 5.
+ */
 public class Summary internal constructor(
     fullName: String,
     help: String,
@@ -81,6 +123,9 @@ public class Summary internal constructor(
         return Child(quantiles)
     }
 
+    /**
+     * Makes sure that there ano labels named 'quantile' in the labelNames.
+     */
     init{
         for (label in labelNames) {
             if (label.equals("quantile")) {
@@ -90,6 +135,14 @@ public class Summary internal constructor(
         initializeNoLabelsChild()
     }
 
+
+    /**
+     * A utility class for measuring the duration of operations and recording the observed duration
+     * in the associated histogram.
+     *
+     * @property child The histogram child instance to record the duration.
+     * @property start The start time of the operation in milliseconds.
+     */
     public class Timer{
 
         private val child: Child
@@ -111,6 +164,14 @@ public class Summary internal constructor(
 
     }
 
+
+    /**
+     * Represents a labeled child of the summary metric.
+     *
+     * Use this to operate on a specific label set:
+     *
+     * summary.labels("GET").startTimer().observeDuration()
+     */
     public inner class Child{
 
         public fun startTimer():Timer{
@@ -147,12 +208,16 @@ public class Summary internal constructor(
 
 
 
+        /**
+         * Returns the current value of the summary as a [ValueSummary] object.
+         *
+         * This includes the count, sum, quantiles, and creation timestamp.
+         */
         public fun get():ValueSummary{
             val map = mutableMapOf<Double, Double>()
             for(quantile in quantiles){
                 map[quantile.quantile] = quantilesValues?.get(quantile.quantile) ?: 0.0
             }
-
 
 
             return ValueSummary(
@@ -163,6 +228,14 @@ public class Summary internal constructor(
                 )
         }
 
+
+        /**
+         * Observes a value and updates the summary metrics accordingly.
+         * This method is thread-safe and can be called concurrently.
+         *
+         * @param value The value to observe. Must be a finite double.
+         * @throws IllegalArgumentException if the value is NaN or infinite.
+         */
         public suspend fun observe(value:Double){
             withContext(Dispatchers.Default) {
                 count.getAndIncrement()
