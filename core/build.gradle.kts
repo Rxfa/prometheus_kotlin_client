@@ -28,6 +28,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+                implementation("org.jetbrains.kotlinx:atomicfu:0.22.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
             }
         }
@@ -36,6 +37,12 @@ kotlin {
                 implementation(libs.kotlin.test)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
             }
+        }
+        val jvmMain by getting {
+
+        }
+        val jvmTest by getting {
+
         }
     }
 }
@@ -51,7 +58,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
 }
-
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
 

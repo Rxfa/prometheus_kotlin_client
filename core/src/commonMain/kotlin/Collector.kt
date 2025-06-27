@@ -40,6 +40,8 @@ public abstract class Collector(
         COUNTER("counter"),
         UNKNOWN("unknown"),
         GAUGE("gauge"),
+        HISTOGRAM("histogram"),
+        SUMMARY("summary"),
     }
 
     /**

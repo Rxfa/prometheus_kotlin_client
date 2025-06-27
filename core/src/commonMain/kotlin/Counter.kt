@@ -1,6 +1,10 @@
 package io.github.rxfa.prometheus.core
 
 import kotlin.reflect.KClass
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.updateAndGet
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * DSL-style function to build and register a [Counter] using a [CounterBuilder].
@@ -60,27 +64,82 @@ public class Counter internal constructor(
         return "${metricName}_total"
     }
 
-    public inner class Child {
-        private var value = 0.0
 
-        public fun inc(amount: Double) {
+    /**
+     * Represents a labeled child of the counter metric.
+     *
+     * Use this to operate on a specific label set:
+     * ```
+     * counter.labels("GET").inc()
+     * ```
+     */
+    public inner class Child {
+        /**
+         * The current value of the counter, stored as a raw bits representation of a Double.
+         * This allows for atomic updates to the counter value, since AtomicDouble nor DoubleAdder is available in Kotlin/Native.
+         */
+        private var value = atomic(0.0.toRawBits())
+
+        /**
+         * Increments the counter by the specified [amount].
+         * To update the value we must first tranform from raw bits to Double, then add the [amount],
+         * and finally convert back to raw bits for atomic storage.
+         *
+         * @param amount The value to increment the counter by. Must be non-negative.
+         * @throws IllegalArgumentException if [amount] is negative.
+         */
+        public suspend fun inc(amount: Double) {
             require(amount >= 0) { "Value must be positive" }
-            value += amount
+            withContext(Dispatchers.Default){
+                 value.updateAndGet { currentBits ->
+                     val current = Double.fromBits(currentBits)
+                     val updated = current + amount
+                     updated.toBits()
+                }
+            }
         }
 
-        public fun inc(){
+        /**
+         * Increments the counter by 1.
+         */
+        public suspend fun inc(){
             inc(1.0)
         }
 
-        public fun get(): Double = value
+        /**
+         * Retrieves the current value of the counter.
+         *
+         * @return The current value of the counter.
+         */
+        public fun get(): Double =  Double.fromBits(value.value)
     }
 
-    public fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
+    /**
+     * Increments the counter by the specified [amount].
+     *
+     * @param amount The value to increment the counter by. Must be non-negative.
+     * @throws IllegalArgumentException if [amount] is negative.
+     */
+    public suspend fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
 
-    public fun inc(): Unit? = noLabelsChild?.inc()
 
+    /**
+     * Increments the counter by 1.
+     */
+    public suspend fun inc(): Unit? = noLabelsChild?.inc()
+
+    /**
+     * Retrieves the current value of the counter.
+     *
+     * @return The current value of the counter, or 0.0 if no labels are defined.
+     */
     public fun get(): Double = noLabelsChild?.get() ?: 0.0
 
+    /**
+     * Collects the current metric samples for this counter.
+     *
+     * @return A [MetricFamilySamples] object containing the collected samples.
+     */
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
         for ((labels, child) in childMetrics){
@@ -94,7 +153,14 @@ public class Counter internal constructor(
     }
 }
 
-public fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+/**
+ * Executes the given [block] and increments the counter if an exception of the specified types is thrown.
+ *
+ * @param exceptionTypes The types of exceptions to count. If empty, all exceptions are counted.
+ * @param block The block of code to execute.
+ * @return The result of the block, or `null` if an exception is caught.
+ */
+public suspend fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
     return try {
         block()
     } catch (e: Throwable) {
@@ -105,7 +171,14 @@ public fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out Throwab
     }
 }
 
-public fun <T> Counter.Child.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+/**
+ * Executes the given [block] and increments the counter if an exception of the specified types is thrown.
+ *
+ * @param exceptionTypes The types of exceptions to count. If empty, all exceptions are counted.
+ * @param block The block of code to execute.
+ * @return The result of the block, or `null` if an exception is caught.
+ */
+public suspend fun <T> Counter.Child.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
     return try {
         block()
     } catch (e: Throwable) {
