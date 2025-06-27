@@ -65,30 +65,9 @@ public class Counter internal constructor(
         return "${metricName}_total"
     }
 
-
-    /**
-     * Represents a labeled child of the counter metric.
-     *
-     * Use this to operate on a specific label set:
-     * ```
-     * counter.labels("GET").inc()
-     * ```
-     */
     public inner class Child {
-        /**
-         * The current value of the counter, stored as a raw bits representation of a Double.
-         * This allows for atomic updates to the counter value, since AtomicDouble nor DoubleAdder is available in Kotlin/Native.
-         */
         private var value = atomic(0.0.toRawBits())
 
-        /**
-         * Increments the counter by the specified [amount].
-         * To update the value we must first tranform from raw bits to Double, then add the [amount],
-         * and finally convert back to raw bits for atomic storage.
-         *
-         * @param amount The value to increment the counter by. Must be non-negative.
-         * @throws IllegalArgumentException if [amount] is negative.
-         */
         public suspend fun inc(amount: Double) {
             require(amount >= 0) { "Value must be positive" }
             withContext(Dispatchers.Default){
@@ -100,9 +79,7 @@ public class Counter internal constructor(
             }
         }
 
-        /**
-         * Increments the counter by 1.
-         */
+        /** Increments the counter by 1.*/
         public suspend fun inc(){
             inc(1.0)
         }
@@ -124,9 +101,7 @@ public class Counter internal constructor(
     public suspend fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
 
 
-    /**
-     * Increments the counter by 1.
-     */
+    /** Increments the counter by 1.*/
     public suspend fun inc(): Unit? = noLabelsChild?.inc()
 
     /**
