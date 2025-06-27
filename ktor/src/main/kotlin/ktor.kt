@@ -1,8 +1,6 @@
 package io.github.rxfa.prometheus.ktor
 
-import io.github.rxfa.prometheus.core.CollectorRegistry
-import io.github.rxfa.prometheus.core.PrometheusExporter
-import io.github.rxfa.prometheus.core.counter
+import io.github.rxfa.prometheus.core.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
@@ -81,11 +79,49 @@ private class KtorMetrics(private val registry: CollectorRegistry) {
         labelNames("method", "path", "exception_class")
     }
 
+    private val currentUsers = gauge("http_current_users") {
+        help("Current number of users")
+        labelNames("status")
+    }
+
+    private val httpLatencyHistogram = histogram("http_request_duration_seconds") {
+        help("Duration of HTTP requests in seconds")
+        labelNames("method", "endpoint")
+    }
+
+    private val httpLatencyCustomLinear = linearHistogramBuckets("http_request_duration_custom_linear_buckets_seconds",{
+        help("Quantiles of HTTP request durations in seconds")
+        labelNames("method", "endpoint")
+    },0.0,2.0,10)
+
+    private val httpLatencyCustomExponential = exponentialHistogramBuckets("http_request_duration_custom_exponential_buckets_seconds",{
+        help("Quantiles of HTTP request durations in seconds")
+        labelNames("method", "endpoint")
+    },2.0,2.0,5)
+
+
+    private val httpLatencySummary = summary("http_request_duration_seconds") {
+        help("Duration of HTTP requests in seconds")
+        labelNames("method")
+        quantiles(
+            quantile(0.5, 0.05),   // Median with 5% error
+            quantile(0.95, 0.01),  // 95th percentile with 1% error
+            quantile(0.99, 0.001)  // 99th percentile with 0.1% error
+        )
+    }
+
+
+
     init {
         runBlocking {
             registry.register(totalRequests)
             registry.register(totalErrors)
             registry.register(totalExceptions)
+            registry.register(currentUsers)
+            registry.register(httpLatencyHistogram)
+            registry.register(httpLatencyCustomLinear)
+            registry.register(httpLatencyCustomExponential)
+            registry.register(httpLatencySummary)
         }
     }
 
@@ -115,6 +151,7 @@ private class KtorMetrics(private val registry: CollectorRegistry) {
                 totalErrors.labels(method, statusCode, path).inc()
             }
         }
+
     }
 }
 
