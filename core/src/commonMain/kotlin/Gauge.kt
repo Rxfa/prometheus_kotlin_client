@@ -43,7 +43,6 @@ public class Gauge internal constructor(
     unit: String = "",
     private val clock: Clock = Clock.System,
 ) : SimpleCollector<Gauge.Child>(fullName, help, labelNames, unit) {
-
     override val suffixes: Set<String> = setOf()
     override val name: String = fullName
     override val type: Type = Type.GAUGE
@@ -67,9 +66,7 @@ public class Gauge internal constructor(
     public inner class Child {
         private var value = atomic(0.0.toRawBits())
 
-        /**
-         * Increments the gauge by the specified amount (must be non-negative).
-         */
+        /** Increments the gauge by the specified amount (must be non-negative). */
         public suspend fun inc(amount: Double){
             require(amount >= 0) { "Increment must be non-negative" }
             withContext(Dispatchers.Default){
@@ -81,16 +78,12 @@ public class Gauge internal constructor(
             }
         }
 
-        /**
-         * Increments the gauge by 1.
-         */
+        /** Increments the gauge by 1.*/
         public suspend fun inc(){
             inc(1.0)
         }
 
-        /**
-         * Decrements the gauge by the specified amount (must be non-negative).
-         */
+        /** Decrements the gauge by the specified amount(must be non-negative).*/
         public suspend fun dec(amount: Double){
             require(amount >= 0) { "Decrement must be non-negative" }
             withContext(Dispatchers.Default){
@@ -102,74 +95,55 @@ public class Gauge internal constructor(
             }
         }
 
-        /**
-         * Decrements the gauge by 1.
-         */
+        /** Decrements the gauge by 1.*/
         public suspend fun dec(){
             dec(1.0)
         }
 
-        /**
-         * Set the gauge to a specific value.
-         */
+        /** Sets the gauge to a specific value.*/
         public suspend fun set(amount: Double) {
             withContext(Dispatchers.Default) {
                 value.value = amount.toRawBits()
             }
         }
 
-        /**
-         * Sets the gauge value to the current Unix time in seconds.
-         */
+        /** Sets the gauge value to the current Unix time in seconds.*/
         public suspend fun setToCurrentTime(){
             withContext(Dispatchers.Default){
                 value.value = getCurrentSeconds(clock).toDouble().toRawBits()
             }
-
         }
 
         /** Gets the current value of the gauge. */
         public fun get(): Double = Double.fromBits(value.value)
     }
 
-    /**
-     * Increments the unlabeled gauge by 1.
-     */
+    /** Increments the unlabeled gauge by 1.*/
     public suspend fun inc(){
         noLabelsChild?.inc()
     }
 
-    /**
-     * Increments the unlabeled gauge by a specific amount.
-     */
+    /** Increments the unlabeled gauge by a specific amount.*/
     public suspend fun inc(amount: Double){
         noLabelsChild?.inc(amount)
     }
 
-    /**
-     *  Decrements the unlabeled gauge by 1.
-     */
+    /** Decrements the unlabeled gauge by 1.*/
     public suspend fun dec(){
         noLabelsChild?.dec()
     }
 
-    /**
-     * Decrements the unlabeled gauge by a specific amount.
-     */
+    /** Decrements the unlabeled gauge by a specific amount.*/
     public suspend fun dec(amount: Double){
         noLabelsChild?.dec(amount)
     }
 
-    /**
-     * Sets the unlabeled gauge to a specific value.
-     */
+    /** Sets the unlabeled gauge to a specific value.*/
     public suspend fun set(amount: Double){
         noLabelsChild?.set(amount)
     }
 
-    /**
-     * Sets the unlabeled gauge to the current Unix time in seconds.
-     */
+    /** Sets the unlabeled gauge to the current Unix time in seconds.*/
     public suspend fun setToCurrentTime() {
         noLabelsChild?.setToCurrentTime()
     }

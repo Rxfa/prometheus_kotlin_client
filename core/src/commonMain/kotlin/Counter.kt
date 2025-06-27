@@ -6,7 +6,6 @@ import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-
 /**
  * DSL-style function to build and register a [Counter] using a [CounterBuilder].
  *
@@ -100,9 +99,7 @@ public class Counter internal constructor(
             }
         }
 
-        /**
-         * Increments the counter by 1.
-         */
+        /** Increments the counter by 1.*/
         public suspend fun inc(){
             inc(1.0)
         }
@@ -124,9 +121,7 @@ public class Counter internal constructor(
     public suspend fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
 
 
-    /**
-     * Increments the counter by 1.
-     */
+    /** Increments the counter by 1.*/
     public suspend fun inc(): Unit? = noLabelsChild?.inc()
 
     /**
