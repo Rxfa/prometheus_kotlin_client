@@ -84,7 +84,7 @@ private class KtorMetrics(private val registry: CollectorRegistry) {
         labelNames("status")
     }
 
-    private val httpLatencyHistogram = histogram("http_request_duration_seconds") {
+    private val httpLatencyHistogram = histogram("http_request_duration_seconds_histogram") {
         help("Duration of HTTP requests in seconds")
         labelNames("method", "endpoint")
     }
@@ -100,7 +100,7 @@ private class KtorMetrics(private val registry: CollectorRegistry) {
     },2.0,2.0,5)
 
 
-    private val httpLatencySummary = summary("http_request_duration_seconds") {
+    private val httpLatencySummary = summary("http_request_duration_seconds_summary") {
         help("Duration of HTTP requests in seconds")
         labelNames("method")
         quantiles(
@@ -131,7 +131,21 @@ private class KtorMetrics(private val registry: CollectorRegistry) {
             val method = call.request.httpMethod.value
             val path = normalizePath(call.request.path())
             totalRequests.labels(method, path).inc()
+
+            val startTime = System.nanoTime()
+
+
             proceed()
+
+            val durationSeconds = (System.nanoTime() - startTime) / 1_000_000_000.0
+            httpLatencyHistogram.labels(method, path).observe(durationSeconds)
+            httpLatencyCustomLinear.labels(method, path).observe(durationSeconds)
+            httpLatencyCustomExponential.labels(method, path).observe(durationSeconds)
+            httpLatencySummary.labels(method).observe(durationSeconds)
+
+            // Update current users gauge
+            currentUsers.labels("active").inc()
+
         }
 
         // Install status pages to intercept exceptions and error status codes

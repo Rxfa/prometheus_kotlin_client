@@ -134,9 +134,9 @@ Time series are uniquely identified by their metric name and optional key-value 
 The names of time series must comply with the following rules:
 
 \begin{itemize}
-    \item \textbf{SHOULD} specify the general feature of a system that is measured.
-    \item \textbf{MAY} use any UTF-8 characters.
-    \item \textbf{SHOULD} match the regex \texttt{[a-zA-Z\_:][a-zA-Z0-9\_:]*} for the best experience and
+    \item It should specify the general feature of a system that is measured.
+    \item It may use any UTF-8 characters.
+    \item It should match the regex \texttt{[a-zA-Z\_:][a-zA-Z0-9\_:]*} for the best experience and
     compatibility.
     Metric names outside of that set will require quoting.
 \end{itemize}
@@ -144,10 +144,10 @@ The names of time series must comply with the following rules:
 Metric labels must comply with the following rules:
 
 \begin{itemize}
-    \item Both names and values \textbf{MAY} use any UTF-8 characters.
-    \item If the name of a metric begins with two underscores, said metric \textbf{MUST} be reserved for internal
+    \item Both names and values may use any UTF-8 characters.
+    \item If the name of a metric begins with two underscores, said metric must be reserved for internal
     Prometheus use.
-    \item \textbf{SHOULD} match the regex \texttt{[a-zA-Z\_:][a-zA-Z0-9\_:]*} for the best experience and
+    \item It should match the regex \texttt{[a-zA-Z\_:][a-zA-Z0-9\_:]*} for the best experience and
     compatibility.
     Metric names outside of that set will require quoting.
     \item Labels with an empty label value are considered equivalent to labels that do not exist.
@@ -158,7 +158,7 @@ Metric labels must comply with the following rules:
 \noindent
 \textbf{NOTE:} Colons (\texttt{:}) in for both label and metric names regex are reserved for user-defined recording
 rules.
-They \textbf{SHOULD NOT} be used by exporters or direct instrumentation.
+They shouldn't be used by exporters or direct instrumentation.
 
 Time series are identified using the following notation:
 \begin{figure}[h]

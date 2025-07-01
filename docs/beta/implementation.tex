@@ -783,15 +783,27 @@ val q = quantile(0.99, 0.01)
 Attempting to use \texttt{quantile} as a label will result in an \texttt{IllegalStateException}.
 
 
-
-
-
-\section{Metric Types and API Design}
-\lipsum[1]
-
-
 \section{Collector Registration and Logic}
-\lipsum[1]
+
+To manage Prometheus metrics efficiently in a concurrent and coroutine-based environment, a dedicated component is required to register and manage collectors. The \texttt{CollectorRegistry} class provides a thread-safe mechanism for this purpose.
+
+It maintains a list of registered metric collectors and ensures that each collector has a unique name. Operations such as registering, unregistering, clearing, and retrieving collectors are all safely guarded using Kotlin coroutines and a \texttt{Mutex} for mutual exclusion.
+
+The core functionality includes:
+\begin{itemize}
+    \item \textbf{Registration}: New collectors can be registered via the \texttt{register} method. If a collector with the same full name already exists in the registry, the operation throws an \texttt{IllegalStateException} to prevent duplicates.
+    
+    \item \textbf{Unregistration}: The \texttt{unregister} method allows removing a previously registered collector. If the collector is not found, the operation is silently ignored.
+    
+    \item \textbf{Clear}: The \texttt{clear} method removes all collectors from the registry, effectively resetting the state.
+    
+    \item \textbf{Collection}: The \texttt{collect} and \texttt{getCollectors} methods allow external components (such as the \texttt{/metrics} endpoint) to retrieve all currently registered collectors, either asynchronously or directly.
+\end{itemize}
+
+A globally accessible instance, \texttt{CollectorRegistry.defaultRegistry}, is provided for convenience and typical single-application scenarios.
+
+This design enables clean separation of metric definition from metric exposition and supports safe usage across multiple coroutines and threads, which is essential in modern Kotlin-based server applications.
+
 
 
 \section{Ktor Integration}
