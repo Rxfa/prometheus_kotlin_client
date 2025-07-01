@@ -1,11 +1,10 @@
 package io.github.rxfa.prometheus.core
 
-import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
+import kotlin.reflect.KClass
 
 /**
  * DSL-style function to build and register a [Counter] using a [CounterBuilder].
@@ -22,7 +21,10 @@ import kotlinx.coroutines.withContext
  * @param block Configuration block for the [CounterBuilder].
  * @return A configured [Counter] instance.
  */
-public fun counter(name: String, block: CounterBuilder.() -> Unit): Counter {
+public fun counter(
+    name: String,
+    block: CounterBuilder.() -> Unit,
+): Counter {
     return CounterBuilder(name).apply(block).build()
 }
 
@@ -60,7 +62,7 @@ public class Counter internal constructor(
     override fun buildMetricName(): String {
         var metricName: String = fullName.removeSuffix("_total")
         if (unit.isNotBlank() && !metricName.endsWith(unit)) {
-            metricName = "${metricName}_${unit}"
+            metricName = "${metricName}_$unit"
         }
         return "${metricName}_total"
     }
@@ -70,20 +72,20 @@ public class Counter internal constructor(
 
         public suspend fun inc(amount: Double) {
             require(amount >= 0) { "Value must be positive" }
-            withContext(Dispatchers.Default){
-                 value.updateAndGet { currentBits ->
-                     val current = Double.fromBits(currentBits)
-                     val updated = current + amount
-                     updated.toBits()
+            withContext(Dispatchers.Default) {
+                value.updateAndGet { currentBits ->
+                    val current = Double.fromBits(currentBits)
+                    val updated = current + amount
+                    updated.toBits()
                 }
             }
         }
 
-        public suspend fun inc(){
+        public suspend fun inc() {
             inc(1.0)
         }
 
-        public fun get(): Double =  Double.fromBits(value.value)
+        public fun get(): Double = Double.fromBits(value.value)
     }
 
     public suspend fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
@@ -94,9 +96,9 @@ public class Counter internal constructor(
 
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
-        for ((labels, child) in childMetrics){
+        for ((labels, child) in childMetrics) {
             samples += Sample(name = name, labelNames = labelNames, labelValues = labels, value = child.get())
-            if(includeCreatedSeries){
+            if (includeCreatedSeries) {
                 val createdSeriesName = name.removeSuffix("_total") + "_created"
                 samples += Sample(name = createdSeriesName, labelNames = labelNames, labelValues = labels, value = child.get())
             }
@@ -105,7 +107,10 @@ public class Counter internal constructor(
     }
 }
 
-public suspend fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+public suspend fun <T> Counter.countExceptions(
+    vararg exceptionTypes: KClass<out Throwable>,
+    block: () -> T,
+): T? {
     return try {
         block()
     } catch (e: Throwable) {
@@ -116,7 +121,10 @@ public suspend fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out
     }
 }
 
-public suspend fun <T> Counter.Child.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
+public suspend fun <T> Counter.Child.countExceptions(
+    vararg exceptionTypes: KClass<out Throwable>,
+    block: () -> T,
+): T? {
     return try {
         block()
     } catch (e: Throwable) {

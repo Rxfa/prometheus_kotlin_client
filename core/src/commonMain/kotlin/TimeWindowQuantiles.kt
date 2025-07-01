@@ -1,19 +1,15 @@
 package io.github.rxfa.prometheus.core
 
-import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.internal.synchronized
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 
-
 public class TimeWindowQuantiles(
     private val quantiles: Array<Quantiles.Quantile>,
     maxAgeSeconds: Long,
-    ageBuckets: Int
+    ageBuckets: Int,
 ) {
     private val ringBuffer: Array<Quantiles> = Array(ageBuckets) { Quantiles(quantiles) }
     private var currentBucket: Int = 0
@@ -25,9 +21,7 @@ public class TimeWindowQuantiles(
         return rotate().get(q)
     }
 
-
-
-    suspend public fun insert(value: Double): Unit {
+    public suspend fun insert(value: Double) {
         withContext(Dispatchers.Default) {
             mutex.withLock {
                 rotate()
@@ -37,8 +31,6 @@ public class TimeWindowQuantiles(
             }
         }
     }
-
-
 
     private fun rotate(): Quantiles {
         var timeSinceLastRotateMillis = Clock.System.now().toEpochMilliseconds() - lastRotateTimestampMillis

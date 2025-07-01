@@ -1,13 +1,14 @@
-package io.github.rxfa.prometheus.ktor_example
-
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.Application
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
 
 fun Application.configureRouting() {
     routing {
-        get("/"){
+        get("/") {
             simulateError(1..75)?.let { (status, msg) ->
                 call.respond(status, msg)
                 return@get
@@ -39,7 +40,7 @@ fun Application.configureRouting() {
             call.respondText("Here are your orders!")
         }
 
-        get("/cart"){
+        get("/cart") {
             simulateError(1..95)?.let { (status, msg) ->
                 call.respond(status, msg)
                 return@get
@@ -49,8 +50,8 @@ fun Application.configureRouting() {
     }
 }
 
-fun simulateError(code: IntRange): Pair<HttpStatusCode, String>? {
-    return when (code.random()) {
+fun simulateError(code: IntRange): Pair<HttpStatusCode, String>? =
+    when (code.random()) {
         1 -> HttpStatusCode.BadRequest to "Bad Request"
         2 -> HttpStatusCode.Unauthorized to "Unauthorized"
         3 -> HttpStatusCode.Forbidden to "Forbidden"
@@ -60,4 +61,3 @@ fun simulateError(code: IntRange): Pair<HttpStatusCode, String>? {
         7 -> throw IllegalArgumentException("Simulated input error")
         else -> null
     }
-}

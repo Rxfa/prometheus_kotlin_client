@@ -1,10 +1,13 @@
-package io.github.rxfa.prometheus.ktor_example
+package io.github.rxfa.prometheus.ktorExample
 
-import io.ktor.server.application.*
+import configureRouting
 import io.github.rxfa.prometheus.ktor.installPrometheusMetrics
+import io.ktor.server.application.Application
+import simulateTrafficLoad
 
 fun main(args: Array<String>) {
-    io.ktor.server.netty.EngineMain.main(args)
+    io.ktor.server.netty.EngineMain
+        .main(args)
 }
 
 fun Application.module() {
@@ -12,4 +15,3 @@ fun Application.module() {
     installPrometheusMetrics()
     simulateTrafficLoad()
 }
-

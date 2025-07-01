@@ -3,27 +3,25 @@ package io.github.rxfa.prometheus.core
 import kotlin.concurrent.Volatile
 
 public object ExemplarConfig {
-
     @Volatile
     private var enabled: Boolean = true
 
     @Volatile
-    private var histogramExemplarSample: HistogramExemplarSample?;
+    private var histogramExemplarSample: HistogramExemplarSample?
 
-
-    init{
-        //TODO(need to create default sampler)
-        histogramExemplarSample = object : HistogramExemplarSample {
-            override fun sample(
-                value: Double,
-                bucketFrom: Double,
-                bucketTo: Double,
-                previous: Exemplar?
-            ): Exemplar {
-                return Exemplar(listOf("bucketFrom" + bucketFrom.toString(), "bucketTo" + bucketTo.toString()), value)
+    init {
+        // TODO(need to create default sampler)
+        histogramExemplarSample =
+            object : HistogramExemplarSample {
+                override fun sample(
+                    value: Double,
+                    bucketFrom: Double,
+                    bucketTo: Double,
+                    previous: Exemplar?,
+                ): Exemplar {
+                    return Exemplar(listOf("bucketFrom" + bucketFrom.toString(), "bucketTo" + bucketTo.toString()), value)
+                }
             }
-
-        }
     }
 
     public fun isEnabled(): Boolean {
@@ -45,5 +43,4 @@ public object ExemplarConfig {
     public fun setHistogramExemplarSampler(sampler: HistogramExemplarSample) {
         this.histogramExemplarSample = sampler
     }
-
 }

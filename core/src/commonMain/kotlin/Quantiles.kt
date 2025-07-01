@@ -5,41 +5,41 @@ package io.github.rxfa.prometheus.core
 // and adapted to Kotlin.
 
 public class Quantiles(
-    private val quantiles: Array<Quantile>
+    private val quantiles: Array<Quantile>,
 ) {
-
-    private var n:Int = 0
+    private var n: Int = 0
 
     private val samples: MutableList<Sample> = mutableListOf()
-
 
     private val compressInterval: Int = 128
     private var insertsSinceLastCompress: Int = 0
 
-    private val buffer:Array<Double> = Array(compressInterval){0.0}
-    private var bufferIndex:Int = 0
+    private val buffer: Array<Double> = Array(compressInterval) { 0.0 }
+    private var bufferIndex: Int = 0
 
     public fun insert(value: Double) {
         buffer[bufferIndex++] = value
 
-        if(bufferIndex == buffer.size){
+        if (bufferIndex == buffer.size) {
             flush()
         }
-        if(++ insertsSinceLastCompress == compressInterval){
+        if (++insertsSinceLastCompress == compressInterval) {
             compress()
             insertsSinceLastCompress = 0
         }
-
     }
 
     private fun flush() {
-        buffer.sort(0,bufferIndex)
+        buffer.sort(0, bufferIndex)
         insertBatch(buffer, bufferIndex)
         bufferIndex = 0
     }
 
-    private fun insertBatch(sortedBuffer: Array<Double>, toIndex: Int) {
-        if(toIndex == 0) return
+    private fun insertBatch(
+        sortedBuffer: Array<Double>,
+        toIndex: Int,
+    ) {
+        if (toIndex == 0) return
         val iterator = samples.listIterator()
         var i = 0 // position in buffer
         var r = 0 // sum of g's left of the current sample
@@ -64,8 +64,11 @@ public class Quantiles(
         }
     }
 
-
-    private fun insertBefore(iterator: MutableListIterator<Sample>, value: Double, r: Int) {
+    private fun insertBefore(
+        iterator: MutableListIterator<Sample>,
+        value: Double,
+        r: Int,
+    ) {
         if (!iterator.hasPrevious()) {
             samples.add(0, Sample(value, 0))
         } else {
@@ -119,11 +122,12 @@ public class Quantiles(
             if (q.quantile == 0.0 || q.quantile == 1.0) {
                 continue
             }
-            val result = if (r >= q.quantile * n) {
-                (q.v * r + 0.00000000001).toInt()
-            } else {
-                (q.u * (n - r) + 0.00000000001).toInt()
-            }
+            val result =
+                if (r >= q.quantile * n) {
+                    (q.v * r + 0.00000000001).toInt()
+                } else {
+                    (q.u * (n - r) + 0.00000000001).toInt()
+                }
             if (result < minResult) {
                 minResult = result
             }
@@ -158,29 +162,30 @@ public class Quantiles(
         }
     }
 
-
+    /**
+     * Represents a single sample used in a quantile estimation algorithm.
+     *
+     * Each sample stores a numeric value along with metadata used to approximate
+     * quantile ranks with bounded error.
+     *
+     * @property value The observed value being sampled.
+     * @property delta The maximum allowable difference between the true rank of this sample
+     *   and the minimum rank it could occupy. This defines the error bound for quantile approximation.
+     * @property g The number of observations between this sample and its predecessor. Initially set to 1,
+     *   but may be increased during compression steps to reduce the number of stored samples.
+     */
     public data class Sample(
-        val value:Double,
-        /**
-         * Observed value.
-         */
+        val value: Double,
         val delta: Int,
-        /**
-         * Difference between the greatest possible rank of this sample and the lowest possible rank of this sample.
-         */
-        var g: Int = 1 //
-        /**
-         * Difference between the lowest possible rank of this sample and its predecessor.
-         * This always starts with 1, but will be updated when compress() merges Samples.
-         */
-    ){
-        public override fun toString(): String {
-            return "Sample{value=${value}, delta=${delta}, g=${g}}"
-        }
+        var g: Int = 1,
+    ) {
+        public override fun toString(): String = "Sample{value=$value, delta=$delta, g=$g}"
     }
 
-    public class Quantile(quantile: Double, epsilon: Double) {
-
+    public class Quantile(
+        quantile: Double,
+        epsilon: Double,
+    ) {
         public val quantile: Double
 
         public val epsilon: Double
@@ -190,18 +195,15 @@ public class Quantiles(
         public val v: Double
 
         init {
-            if (quantile < 0.0 || quantile > 1.0) throw IllegalArgumentException("Quantile must be between 0 and 1");
-            if (epsilon < 0.0 || epsilon > 1.0) throw IllegalArgumentException("Epsilon must be between 0 and 1");
+            if (quantile < 0.0 || quantile > 1.0) throw IllegalArgumentException("Quantile must be between 0 and 1")
+            if (epsilon < 0.0 || epsilon > 1.0) throw IllegalArgumentException("Epsilon must be between 0 and 1")
 
-            this.quantile = quantile;
-            this.epsilon = epsilon;
-            u = 2.0 * epsilon / (1.0 - quantile); // if quantile == 1 this will be Double.NaN
-            v = 2.0 * epsilon / quantile; // if quantile == 0 this will be Double.NaN
+            this.quantile = quantile
+            this.epsilon = epsilon
+            u = 2.0 * epsilon / (1.0 - quantile) // if quantile == 1 this will be Double.NaN
+            v = 2.0 * epsilon / quantile // if quantile == 0 this will be Double.NaN
         }
 
-
-        public override fun toString(): String {
-            return "Quantile{q=${quantile}.3f, epsilon=${epsilon}.3f}"
-        }
+        public override fun toString(): String = "Quantile{q=$quantile.3f, epsilon=$epsilon.3f}"
     }
 }

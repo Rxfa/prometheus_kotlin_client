@@ -7,16 +7,22 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import org.openjdk.jmh.annotations.*
+import org.openjdk.jmh.annotations.Benchmark
+import org.openjdk.jmh.annotations.BenchmarkMode
+import org.openjdk.jmh.annotations.Level
+import org.openjdk.jmh.annotations.Mode
+import org.openjdk.jmh.annotations.OutputTimeUnit
+import org.openjdk.jmh.annotations.Scope
+import org.openjdk.jmh.annotations.Setup
+import org.openjdk.jmh.annotations.State
+import org.openjdk.jmh.annotations.TearDown
 import java.util.concurrent.TimeUnit
-
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 open class JavaClientGauge {
-
-    private lateinit var scope : CoroutineScope
+    private lateinit var scope: CoroutineScope
     private lateinit var gauge: Gauge
     private lateinit var incChannel: Channel<Unit>
     private lateinit var decChannel: Channel<Unit>
@@ -25,10 +31,12 @@ open class JavaClientGauge {
     @Setup
     fun setup() {
         scope = CoroutineScope(Dispatchers.Default)
-        gauge = Gauge.build()
-            .name("test_gauge")
-            .help("Test Gauge")
-            .register()
+        gauge =
+            Gauge
+                .build()
+                .name("test_gauge")
+                .help("Test Gauge")
+                .register()
 
         incChannel = Channel(capacity = 1024, onBufferOverflow = BufferOverflow.DROP_OLDEST)
         decChannel = Channel(capacity = 1024, onBufferOverflow = BufferOverflow.DROP_OLDEST)
@@ -76,8 +84,5 @@ open class JavaClientGauge {
     }
 
     @Benchmark
-    fun getGaugeValue(): Double {
-        return gauge.get()
-    }
-
+    fun getGaugeValue(): Double = gauge.get()
 }

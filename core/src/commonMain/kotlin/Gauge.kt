@@ -1,6 +1,5 @@
 package io.github.rxfa.prometheus.core
 
-import kotlinx.atomicfu.AtomicLong
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +22,10 @@ import kotlin.time.measureTime
  * @param block Configuration block for the [GaugeBuilder].
  * @return A configured [Gauge] instance.
  */
-public fun gauge(name: String, block: GaugeBuilder.() -> Unit): Gauge {
+public fun gauge(
+    name: String,
+    block: GaugeBuilder.() -> Unit,
+): Gauge {
     return GaugeBuilder(name).apply(block).build()
 }
 
@@ -43,7 +45,6 @@ public class Gauge internal constructor(
     unit: String = "",
     private val clock: Clock = Clock.System,
 ) : SimpleCollector<Gauge.Child>(fullName, help, labelNames, unit) {
-
     override val suffixes: Set<String> = setOf()
     override val name: String = fullName
     override val type: Type = Type.GAUGE
@@ -70,9 +71,9 @@ public class Gauge internal constructor(
         /**
          * Increments the gauge by the specified amount (must be non-negative).
          */
-        public suspend fun inc(amount: Double){
+        public suspend fun inc(amount: Double) {
             require(amount >= 0) { "Increment must be non-negative" }
-            withContext(Dispatchers.Default){
+            withContext(Dispatchers.Default) {
                 value.updateAndGet { currentBits ->
                     val current = Double.fromBits(currentBits)
                     val updated = current + amount
@@ -84,16 +85,16 @@ public class Gauge internal constructor(
         /**
          * Increments the gauge by 1.
          */
-        public suspend fun inc(){
+        public suspend fun inc() {
             inc(1.0)
         }
 
         /**
          * Decrements the gauge by the specified amount (must be non-negative).
          */
-        public suspend fun dec(amount: Double){
+        public suspend fun dec(amount: Double) {
             require(amount >= 0) { "Decrement must be non-negative" }
-            withContext(Dispatchers.Default){
+            withContext(Dispatchers.Default) {
                 value.updateAndGet { currentBits ->
                     val current = Double.fromBits(currentBits)
                     val updated = current - amount
@@ -105,7 +106,7 @@ public class Gauge internal constructor(
         /**
          * Decrements the gauge by 1.
          */
-        public suspend fun dec(){
+        public suspend fun dec() {
             dec(1.0)
         }
 
@@ -121,11 +122,10 @@ public class Gauge internal constructor(
         /**
          * Sets the gauge value to the current Unix time in seconds.
          */
-        public suspend fun setToCurrentTime(){
-            withContext(Dispatchers.Default){
+        public suspend fun setToCurrentTime() {
+            withContext(Dispatchers.Default) {
                 value.value = getCurrentSeconds(clock).toDouble().toRawBits()
             }
-
         }
 
         /** Gets the current value of the gauge. */
@@ -135,35 +135,35 @@ public class Gauge internal constructor(
     /**
      * Increments the unlabeled gauge by 1.
      */
-    public suspend fun inc(){
+    public suspend fun inc() {
         noLabelsChild?.inc()
     }
 
     /**
      * Increments the unlabeled gauge by a specific amount.
      */
-    public suspend fun inc(amount: Double){
+    public suspend fun inc(amount: Double) {
         noLabelsChild?.inc(amount)
     }
 
     /**
      *  Decrements the unlabeled gauge by 1.
      */
-    public suspend fun dec(){
+    public suspend fun dec() {
         noLabelsChild?.dec()
     }
 
     /**
      * Decrements the unlabeled gauge by a specific amount.
      */
-    public suspend fun dec(amount: Double){
+    public suspend fun dec(amount: Double) {
         noLabelsChild?.dec(amount)
     }
 
     /**
      * Sets the unlabeled gauge to a specific value.
      */
-    public suspend fun set(amount: Double){
+    public suspend fun set(amount: Double) {
         noLabelsChild?.set(amount)
     }
 
@@ -186,7 +186,7 @@ public class Gauge internal constructor(
      */
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
-        for ((labels, child) in childMetrics){
+        for ((labels, child) in childMetrics) {
             samples += Sample(name = name, labelNames = labelNames, labelValues = labels, value = child.get())
         }
         return familySamplesList(samples)
@@ -229,11 +229,12 @@ public suspend inline fun <T> Gauge.Child.track(block: () -> T): T {
  * @param block The block to execute.
  * @return The result of the block.
  */
-public suspend fun <T> Gauge.setDuration(block: () -> T): T{
+public suspend fun <T> Gauge.setDuration(block: () -> T): T {
     val result: T
-    val secondsTaken = measureTime {
-        block().also { result = it }
-    }.inWholeSeconds.toDouble()
+    val secondsTaken =
+        measureTime {
+            block().also { result = it }
+        }.inWholeSeconds.toDouble()
     set(secondsTaken)
     return result
 }
@@ -244,11 +245,12 @@ public suspend fun <T> Gauge.setDuration(block: () -> T): T{
  * @param block The block to execute.
  * @return The result of the block.
  */
-public suspend fun <T> Gauge.Child.setDuration(block: () -> T): T{
+public suspend fun <T> Gauge.Child.setDuration(block: () -> T): T {
     val result: T
-    val secondsTaken = measureTime {
-        block().also { result = it }
-    }.inWholeSeconds.toDouble()
+    val secondsTaken =
+        measureTime {
+            block().also { result = it }
+        }.inWholeSeconds.toDouble()
     set(secondsTaken)
     return result
 }

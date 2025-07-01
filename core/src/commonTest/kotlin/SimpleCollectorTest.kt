@@ -1,5 +1,9 @@
 import io.github.rxfa.prometheus.core.SimpleCollector
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class SimpleCollectorTest {
     private val validNameText = "valid_metric"
@@ -10,7 +14,7 @@ class SimpleCollectorTest {
         help: String,
         labelNames: List<String> = emptyList(),
         unit: String = "",
-    ): SimpleCollector<DummyCollector.Child>(fullName, help, labelNames, unit) {
+    ) : SimpleCollector<DummyCollector.Child>(fullName, help, labelNames, unit) {
         init {
             initializeNoLabelsChild()
         }
@@ -19,19 +23,17 @@ class SimpleCollectorTest {
         override val name: String = buildMetricName()
         override val type: Type = Type.UNKNOWN
 
-        override fun newChild(): Child {
-            return Child()
-        }
+        override fun newChild(): Child = Child()
 
         override fun collect(): MetricFamilySamples {
             val samples = mutableListOf<Sample>()
-            for((labels, child) in childMetrics){
+            for ((labels, child) in childMetrics) {
                 samples += Sample(name = name, labelNames = labelNames, labelValues = labels, value = child.value)
             }
             return familySamplesList(samples)
         }
 
-        inner class Child(){
+        inner class Child {
             var value: Double = 0.0
                 private set
         }
@@ -59,7 +61,7 @@ class SimpleCollectorTest {
     }
 
     @Test
-    fun `invalid name throws`(){
+    fun `invalid name throws`() {
         assertFailsWith<IllegalArgumentException> {
             DummyCollector("@metric", validHelpText)
         }
@@ -72,11 +74,11 @@ class SimpleCollectorTest {
         assertFailsWith<IllegalArgumentException> {
             DummyCollector("123metric_name", validHelpText)
         }
-        assertTrue{ runCatching { DummyCollector(validNameText, validHelpText) }.isSuccess }
+        assertTrue { runCatching { DummyCollector(validNameText, validHelpText) }.isSuccess }
     }
 
     @Test
-    fun `invalid label name throws`(){
+    fun `invalid label name throws`() {
         assertFailsWith<IllegalArgumentException> {
             DummyCollector(validNameText, validHelpText, listOf("-invalid_name", "_valid_metric"))
         }
@@ -89,11 +91,11 @@ class SimpleCollectorTest {
         assertFailsWith<IllegalArgumentException> {
             DummyCollector(validNameText, validHelpText, listOf("__metric_name"))
         }
-        assertTrue{ runCatching { DummyCollector(validNameText, validHelpText, listOf("valid")) }.isSuccess }
+        assertTrue { runCatching { DummyCollector(validNameText, validHelpText, listOf("valid")) }.isSuccess }
     }
 
     @Test
-    fun `no labels after clear`(){
+    fun `no labels after clear`() {
         val collector = DummyCollector(validNameText, validHelpText, listOf("Method"))
         collector.labels("GET")
         assertEquals(1, collector.collect().samples.size)
@@ -102,7 +104,7 @@ class SimpleCollectorTest {
     }
 
     @Test
-    fun `no label after remove`(){
+    fun `no label after remove`() {
         val collector = DummyCollector(validNameText, validHelpText, listOf("Method", "Status_Code"))
         collector.labels("GET", "404")
         collector.labels("POST", "200")
@@ -112,7 +114,7 @@ class SimpleCollectorTest {
     }
 
     @Test
-    fun `too many labels throws`(){
+    fun `too many labels throws`() {
         val collector = DummyCollector(validNameText, validHelpText, listOf("Method"))
         assertFailsWith<IllegalArgumentException> {
             collector.labels("GET", "404")
@@ -120,7 +122,7 @@ class SimpleCollectorTest {
     }
 
     @Test
-    fun `too few labels throws`(){
+    fun `too few labels throws`() {
         val collector = DummyCollector(validNameText, validHelpText, listOf("Method", "Status_Code"))
         assertFailsWith<IllegalArgumentException> {
             collector.labels("GET")

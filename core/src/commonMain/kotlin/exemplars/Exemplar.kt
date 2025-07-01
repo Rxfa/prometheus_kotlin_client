@@ -1,10 +1,9 @@
 package io.github.rxfa.prometheus.core
 
 public class Exemplar {
-    private val labels:List<String>
+    private val labels: List<String>
     private val value: Double
     private val timestamp: Long?
-
 
     public constructor(labels: List<String>, value: Double, timestamp: Long) {
         this.labels = labels
@@ -36,6 +35,7 @@ public class Exemplar {
     public fun getValue(): Double {
         return value
     }
+
     public fun getTimestamp(): Long? {
         return timestamp
     }

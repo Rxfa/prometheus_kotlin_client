@@ -9,7 +9,6 @@ package io.github.rxfa.prometheus.core
  * It is typically used by [PrometheusExporter] to expose metrics over HTTP.
  */
 public class PrometheusTextFormat {
-
     /**
      * Writes the metrics collected from the provided [collectors] into the
      * Prometheus text exposition format.
@@ -27,7 +26,10 @@ public class PrometheusTextFormat {
      * @param withTimestamp If `true`, appends the collection timestamp to each sample line.
      * @return A string in Prometheus-compatible text format.
      */
-    public fun writeMetrics(collectors: List<Collector>, withTimestamp: Boolean = false): String {
+    public fun writeMetrics(
+        collectors: List<Collector>,
+        withTimestamp: Boolean = false,
+    ): String {
         val stringBuilder = StringBuilder()
         for (collector in collectors) {
             stringBuilder.writeMetricMetadata(collector)
@@ -45,7 +47,7 @@ public class PrometheusTextFormat {
      */
     private fun StringBuilder.writeMetricMetadata(collector: Collector) {
         this.append("# TYPE ${collector.name} ${collector.type.typeName}\n")
-        if(collector.unit.isNotBlank()) {
+        if (collector.unit.isNotBlank()) {
             this.append("# UNIT ${collector.name} ${collector.unit}\n")
         }
         this.append("# HELP ${collector.name} ${collector.help}\n")
@@ -60,13 +62,17 @@ public class PrometheusTextFormat {
      * @param collector The [Collector] whose samples are written.
      * @param withTimestamp Whether to include a millisecond-precision timestamp.
      */
-    private fun StringBuilder.writeMetricData(collector: Collector, withTimestamp: Boolean) {
+    private fun StringBuilder.writeMetricData(
+        collector: Collector,
+        withTimestamp: Boolean,
+    ) {
         val metric = collector.collect()
-        for(sample in metric.samples) {
+        for (sample in metric.samples) {
             val sampleLabelValues = sample.labelValues.map { doubleQuoteString(it) }
-            val labels = (sample.labelNames zip sampleLabelValues)
-                .joinToString(prefix = "{", separator = ",", postfix = "}") { (key, value) -> "$key=$value" }
-            if(withTimestamp) {
+            val labels =
+                (sample.labelNames zip sampleLabelValues)
+                    .joinToString(prefix = "{", separator = ",", postfix = "}") { (key, value) -> "$key=$value" }
+            if (withTimestamp) {
                 this.append("${sample.name}$labels ${sample.value} ${sample.timestamp}\n")
             } else {
                 this.append("${sample.name}$labels ${sample.value}\n")
