@@ -123,4 +123,109 @@ class KtorTest {
             val metrics = client.get("/metrics").bodyAsText()
             assertContains(metrics, """http_requests_total{method="GET",path="/users/{param}/profile"} 1.0""")
         }
+
+    @Test
+    fun `current users gauge is updated`() =
+        testApplication {
+            application {
+                installPrometheusMetrics()
+
+                routing {
+                    get("/active") {
+                        call.respondText("Active")
+                    }
+                }
+            }
+
+            client.get("/active").apply {
+                assertEquals(HttpStatusCode.OK, status)
+            }
+
+            val metrics = client.get("/metrics").bodyAsText()
+            assertContains(metrics, """http_current_users{status="active"} 1.0""")
+        }
+
+    @Test
+    fun `http request duration histogram is updated`() =
+        testApplication {
+            application {
+                installPrometheusMetrics()
+
+                routing {
+                    get("/histogram") {
+                        call.respondText("Histogram")
+                    }
+                }
+            }
+
+            client.get("/histogram").apply {
+                assertEquals(HttpStatusCode.OK, status)
+            }
+
+            val metrics = client.get("/metrics").bodyAsText()
+            assertContains(metrics, """http_request_duration_seconds_histogram""")
+        }
+
+    @Test
+    fun `http request duration custom linear buckets are updated`() =
+        testApplication {
+            application {
+                installPrometheusMetrics()
+
+                routing {
+                    get("/linear") {
+                        call.respondText("Linear")
+                    }
+                }
+            }
+
+            client.get("/linear").apply {
+                assertEquals(HttpStatusCode.OK, status)
+            }
+
+            val metrics = client.get("/metrics").bodyAsText()
+            assertContains(metrics, """http_request_duration_custom_linear_buckets_seconds""")
+        }
+
+    @Test
+    fun `http request duration custom exponential buckets are updated`() =
+        testApplication {
+            application {
+                installPrometheusMetrics()
+
+                routing {
+                    get("/exponential") {
+                        call.respondText("Exponential")
+                    }
+                }
+            }
+
+            client.get("/exponential").apply {
+                assertEquals(HttpStatusCode.OK, status)
+            }
+
+            val metrics = client.get("/metrics").bodyAsText()
+            assertContains(metrics, """http_request_duration_custom_exponential_buckets_seconds""")
+        }
+
+    @Test
+    fun `http request duration summary is updated`() =
+        testApplication {
+            application {
+                installPrometheusMetrics()
+
+                routing {
+                    get("/summary") {
+                        call.respondText("Summary")
+                    }
+                }
+            }
+
+            client.get("/summary").apply {
+                assertEquals(HttpStatusCode.OK, status)
+            }
+
+            val metrics = client.get("/metrics").bodyAsText()
+            assertContains(metrics, """http_request_duration_seconds_summary""")
+        }
 }
