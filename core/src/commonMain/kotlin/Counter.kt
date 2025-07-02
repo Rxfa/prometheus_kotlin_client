@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.reflect.KClass
 
+
 /**
  * DSL-style function to build and register a [Counter] using a [CounterBuilder].
  *
@@ -21,10 +22,7 @@ import kotlin.reflect.KClass
  * @param block Configuration block for the [CounterBuilder].
  * @return A configured [Counter] instance.
  */
-public fun counter(
-    name: String,
-    block: CounterBuilder.() -> Unit,
-): Counter {
+public fun counter(name: String, block: CounterBuilder.() -> Unit): Counter {
     return CounterBuilder(name).apply(block).build()
 }
 
@@ -62,7 +60,7 @@ public class Counter internal constructor(
     override fun buildMetricName(): String {
         var metricName: String = fullName.removeSuffix("_total")
         if (unit.isNotBlank() && !metricName.endsWith(unit)) {
-            metricName = "${metricName}_$unit"
+            metricName = "${metricName}_${unit}"
         }
         return "${metricName}_total"
     }
@@ -92,17 +90,17 @@ public class Counter internal constructor(
          */
         public suspend fun inc(amount: Double) {
             require(amount >= 0) { "Value must be positive" }
-            withContext(Dispatchers.Default) {
-                value.updateAndGet { currentBits ->
-                    val current = Double.fromBits(currentBits)
-                    val updated = current + amount
-                    updated.toBits()
+            withContext(Dispatchers.Default){
+                 value.updateAndGet { currentBits ->
+                     val current = Double.fromBits(currentBits)
+                     val updated = current + amount
+                     updated.toBits()
                 }
             }
         }
 
         /** Increments the counter by 1.*/
-        public suspend fun inc() {
+        public suspend fun inc(){
             inc(1.0)
         }
 
@@ -111,7 +109,7 @@ public class Counter internal constructor(
          *
          * @return The current value of the counter.
          */
-        public fun get(): Double = Double.fromBits(value.value)
+        public fun get(): Double =  Double.fromBits(value.value)
     }
 
     /**
@@ -121,6 +119,7 @@ public class Counter internal constructor(
      * @throws IllegalArgumentException if [amount] is negative.
      */
     public suspend fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
+
 
     /** Increments the counter by 1.*/
     public suspend fun inc(): Unit? = noLabelsChild?.inc()
@@ -139,9 +138,9 @@ public class Counter internal constructor(
      */
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
-        for ((labels, child) in childMetrics) {
+        for ((labels, child) in childMetrics){
             samples += Sample(name = name, labelNames = labelNames, labelValues = labels, value = child.get())
-            if (includeCreatedSeries) {
+            if(includeCreatedSeries){
                 val createdSeriesName = name.removeSuffix("_total") + "_created"
                 samples += Sample(name = createdSeriesName, labelNames = labelNames, labelValues = labels, value = child.get())
             }
@@ -157,10 +156,7 @@ public class Counter internal constructor(
  * @param block The block of code to execute.
  * @return The result of the block, or `null` if an exception is caught.
  */
-public suspend fun <T> Counter.countExceptions(
-    vararg exceptionTypes: KClass<out Throwable>,
-    block: () -> T,
-): T? {
+public suspend fun <T> Counter.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
     return try {
         block()
     } catch (e: Throwable) {
@@ -178,10 +174,7 @@ public suspend fun <T> Counter.countExceptions(
  * @param block The block of code to execute.
  * @return The result of the block, or `null` if an exception is caught.
  */
-public suspend fun <T> Counter.Child.countExceptions(
-    vararg exceptionTypes: KClass<out Throwable>,
-    block: () -> T,
-): T? {
+public suspend fun <T> Counter.Child.countExceptions(vararg exceptionTypes: KClass<out Throwable>, block: () -> T): T? {
     return try {
         block()
     } catch (e: Throwable) {

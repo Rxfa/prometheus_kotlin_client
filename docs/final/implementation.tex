@@ -602,19 +602,243 @@ Regardless of which strategy is used, the implementation always appends a final 
 
 
 
-
-
 %---------------------------
 % SUMMARY
 %---------------------------
 
-\section{Metric Types and API Design}
-\lipsum[1]
+
+
+\section{Summary Metric Implementation}
+
+The \texttt{Summary} metric implementation provides statistical insights into a stream of observations, particularly useful for tracking latencies, response times, or other continuous measurements. It captures the total count, sum of values, and optionally, configured quantiles over a rolling time window.
+
+\subsection{Construction and Registration}
+
+Users can construct summaries either with or without quantiles using the DSL:
+
+\paragraph{Without Quantiles:}
+\begin{verbatim}
+val latency = summary("http_request_duration_seconds") {
+help("Request duration in seconds")
+labelNames("method", "endpoint")
+}
+\end{verbatim}
+
+\paragraph{With Quantiles:}
+\begin{verbatim}
+val p95 = quantile(0.95, error = 0.01)
+val p99 = quantile(0.99, error = 0.005)
+
+val latency = summaryQuantiles("http_request_duration_seconds",
+quantiles = listOf(p95, p99)
+) {
+help("Request duration in seconds")
+labelNames("method", "endpoint")
+}
+\end{verbatim}
+
+Quantiles are configured using the \texttt{quantile()} function, which validates the quantile value and acceptable error margin. The summary builder validates and registers the final \texttt{Summary} instance.
+
+\subsection{Metric Semantics and Structure}
+
+The \texttt{Summary} class extends \texttt{SimpleCollector} and emits the following time series per label set:
+\begin{itemize}
+\item \texttt{\_quantile} – value at configured quantiles (if any),
+\item \texttt{\_sum} – sum of all observed values,
+\item \texttt{\_count} – total number of observations.
+\end{itemize}
+
+The \texttt{quantile} la bel is automatically appended when quantile values are reported. User-defined labels must not include \texttt{quantile}.
+
+\subsection{Quantile Computation Model}
+
+Quantiles are calculated using a time-decaying window, partitioned into rotating age buckets. Configuration options include:
+\begin{itemize}
+\item \texttt{maxAgeSeconds} – length of the observation window (default: 60s),
+\item \texttt{ageBuckets} – number of time slices within the window (default: 5).
+\end{itemize}
+
+The quantile estimation uses a sliding window algorithm that offers trade-offs between accuracy and memory/CPU usage.
+
+\subsection{Atomic Value Handling}
+
+Each \texttt{Child} tracks state independently and atomically:
+\begin{itemize}
+\item \texttt{count} – atomic counter of observations,
+\item \texttt{sum} – atomic floating-point sum using \texttt{Double.toRawBits()} stored in an \texttt{AtomicLong},
+\item \texttt{quantilesValues} – optional time-windowed quantile estimator.
+\end{itemize}
+
+Example sum update:
+\begin{verbatim}
+sum.updateAndGet { bits ->
+val current = Double.fromBits(bits)
+val updated = current + value
+updated.toRawBits()
+}
+\end{verbatim}
+
+\subsection{Observation Logic}
+
+Observations are recorded using the \texttt{observe()} method:
+
+\begin{verbatim}
+summary.labels("POST", "/api").observe(1.23)
+\end{verbatim}
+
+The update is dispatched on \texttt{Dispatchers.Default} for safe concurrent usage:
+
+\begin{verbatim}
+withContext(Dispatchers.Default) {
+count.getAndIncrement()
+sum.updateAndGet { ... }
+quantilesValues?.insert(value)
+}
+\end{verbatim}
+
+This ensures thread safety without explicit locking.
+
+\subsection{Timing Utility}
+
+Summaries support timing operations via:
+\begin{itemize}
+\item \texttt{startTimer()} – creates a timer capturing the start timestamp,
+\item \texttt{observeDuration()} – measures elapsed time and records it,
+\item \texttt{time{...}} – executes a block and records execution duration.
+\end{itemize}
+
+\begin{verbatim}
+val timer = summary.labels("GET", "/").startTimer()
+// ... do work ...
+timer.observeDuration()
+\end{verbatim}
+
+This is useful for monitoring latencies of code blocks.
+
+\subsection{Concurrency Model}
+
+All metric updates occur inside the \texttt{Dispatchers.Default} coroutine context. Atomic references (\texttt{AtomicLong}) and lock-free algorithms ensure high concurrency without contention.
+
+\subsection{Label Handling and Sample Collection}
+
+Each unique set of labels corresponds to a \texttt{Child} instance. The \texttt{collect()} function emits:
+
+\begin{itemize}
+    \item \texttt{\_quantile} series for each defined quantile, 
+    \item \texttt{\_sum} series for the total of all observed values, 
+    \item \texttt{\_count} series for the total number of observations. 
+\end{itemize}
+
+
+\begin{verbatim}
+http_request_duration_seconds_quantile{method="GET", endpoint="/", quantile="0.95"} 0.63
+http_request_duration_seconds_count{method="GET", endpoint="/"} 128
+http_request_duration_seconds_sum{method="GET", endpoint="/"} 89.5
+\end{verbatim}
+
+\subsection{Labeled vs Unlabeled Summary Observation}
+
+Summaries support both labeled and unlabeled usage:
+
+\paragraph{Unlabeled Summary:}
+\begin{verbatim}
+val summary = summary("job_duration_seconds") { help("Duration of jobs") }
+summary.observe(1.2)
+\end{verbatim}
+
+\paragraph{Labeled Summary:}
+\begin{verbatim}
+val summary = summary("job_duration_seconds") {
+help("Duration of jobs")
+labelNames("job", "status")
+}
+summary.labels("backup", "success").observe(0.9)
+\end{verbatim}
+
+Each label set maintains its own independent rolling state and quantile estimators.
+
+\subsection{Summary State Retrieval}
+
+Each \texttt{Child} exposes its current state via the \texttt{get()} method, returning a \texttt{ValueSummary}:
+
+\begin{verbatim}
+val value = summary.labels("GET", "/").get()
+println("count: ${value.count}, sum: ${value.sum}, p95: ${value.quantiles?.get(0.95)}")
+\end{verbatim}
+
+This is useful for diagnostics or exposing metrics to other sinks.
+
+\subsection{Quantile Validation and Utilities}
+
+Quantiles must be:
+\begin{itemize}
+\item Between 0.0 and 1.0 (inclusive),
+\item Paired with an error margin between 0.0 and 1.0.
+\end{itemize}
+
+\begin{verbatim}
+val q = quantile(0.99, 0.01)
+\end{verbatim}
+
+Attempting to use \texttt{quantile} as a label will result in an \texttt{IllegalStateException}.
 
 
 \section{Collector Registration and Logic}
-\lipsum[1]
+
+To manage Prometheus metrics efficiently in a concurrent and coroutine-based environment, a dedicated component is required to register and manage collectors. The \texttt{CollectorRegistry} class provides a thread-safe mechanism for this purpose.
+
+It maintains a list of registered metric collectors and ensures that each collector has a unique name. Operations such as registering, unregistering, clearing, and retrieving collectors are all safely guarded using Kotlin coroutines and a \texttt{Mutex} for mutual exclusion.
+
+The core functionality includes:
+\begin{itemize}
+    \item \textbf{Registration}: New collectors can be registered via the \texttt{register} method. If a collector with the same full name already exists in the registry, the operation throws an \texttt{IllegalStateException} to prevent duplicates.
+    
+    \item \textbf{Unregistration}: The \texttt{unregister} method allows removing a previously registered collector. If the collector is not found, the operation is silently ignored.
+    
+    \item \textbf{Clear}: The \texttt{clear} method removes all collectors from the registry, effectively resetting the state.
+    
+    \item \textbf{Collection}: The \texttt{collect} and \texttt{getCollectors} methods allow external components (such as the \texttt{/metrics} endpoint) to retrieve all currently registered collectors, either asynchronously or directly.
+\end{itemize}
+
+A globally accessible instance, \texttt{CollectorRegistry.defaultRegistry}, is provided for convenience and typical single-application scenarios.
+
+This design enables clean separation of metric definition from metric exposition and supports safe usage across multiple coroutines and threads, which is essential in modern Kotlin-based server applications.
+
 
 
 \section{Ktor Integration}
-\lipsum[1]
+
+To demonstrate the flexibility and extensibility of the Kotlin Prometheus client, a dedicated integration module was developed for the \texttt{Ktor} server framework. This integration allows seamless instrumentation of HTTP metrics and provides a standardized endpoint for Prometheus scraping.
+
+\subsection*{Instrumentation Overview}
+The integration exposes a function \texttt{installPrometheusMetrics}, which registers the relevant collectors to a provided \texttt{CollectorRegistry} (defaulting to a new one) and wires up Ktor's \texttt{ApplicationCallPipeline} and \texttt{StatusPages} to intercept and record:
+
+\begin{itemize}
+  \item Total HTTP requests (\texttt{http\_requests\_total}), labeled by method and normalized path.
+  \item Total HTTP error responses (\texttt{http\_requests\_errors\_total}), labeled by method, path, and status code.
+  \item Total exceptions during request handling (\texttt{http\_exceptions\_total}), labeled by method, path, and exception type.
+  \item Duration of requests captured through histogram (\texttt{http\_request\_duration\_seconds\_histogram}), summary, and custom bucket metrics.
+  \item Current number of users via a gauge (\texttt{http\_current\_users}).
+\end{itemize}
+
+Each metric includes label-based differentiation to allow fine-grained analysis of system behavior and performance.
+
+\subsection*{Metrics Endpoint Exposure}
+The integration also offers optional HTTP endpoint exposure via a configurable path (defaulting to \texttt{/metrics}). When enabled, this endpoint responds with metrics encoded in the OpenMetrics text exposition format. The developer can optionally include timestamps in the output by adjusting the integration configuration.
+
+\subsection*{Traffic Simulation and Example Application}
+An example Ktor application demonstrates practical usage of the metrics system. It defines various endpoints (e.g., \texttt{/}, \texttt{/search}, \texttt{/orders}) and simulates randomized traffic and error conditions to showcase the client's observability capabilities. The application uses Ktor's lifecycle hooks to launch a coroutine that generates synthetic HTTP requests at runtime, mimicking realistic load patterns. Errors and exceptions are injected stochastically to validate metrics tracking under adverse conditions.
+
+\subsection*{Normalization Strategy}
+To prevent label cardinality explosion, the integration applies path normalization using regular expressions. Numeric segments and UUIDs are replaced with a placeholder (\texttt{\{param\}}), ensuring consistent labeling for variable endpoints such as \texttt{/users/1234} or \texttt{/orders/uuid}.
+
+\subsection*{Benefits}
+This integration highlights the following benefits:
+\begin{itemize}
+  \item Minimal developer effort to enable metrics.
+  \item Full coroutine support and non-blocking observation.
+  \item Realistic and structured observability of HTTP applications.
+  \item Alignment with Prometheus best practices for metric naming and label usage.
+\end{itemize}
+
+Future enhancements may include push gateway integration or dynamic configuration via a DSL to extend support for additional deployment models.
