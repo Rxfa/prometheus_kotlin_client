@@ -807,4 +807,38 @@ This design enables clean separation of metric definition from metric exposition
 
 
 \section{Ktor Integration}
-\lipsum[1]
+
+To demonstrate the flexibility and extensibility of the Kotlin Prometheus client, a dedicated integration module was developed for the \texttt{Ktor} server framework. This integration allows seamless instrumentation of HTTP metrics and provides a standardized endpoint for Prometheus scraping.
+
+\subsection*{Instrumentation Overview}
+The integration exposes a function \texttt{installPrometheusMetrics}, which registers the relevant collectors to a provided \texttt{CollectorRegistry} (defaulting to a new one) and wires up Ktor's \texttt{ApplicationCallPipeline} and \texttt{StatusPages} to intercept and record:
+
+\begin{itemize}
+  \item Total HTTP requests (\texttt{http\_requests\_total}), labeled by method and normalized path.
+  \item Total HTTP error responses (\texttt{http\_requests\_errors\_total}), labeled by method, path, and status code.
+  \item Total exceptions during request handling (\texttt{http\_exceptions\_total}), labeled by method, path, and exception type.
+  \item Duration of requests captured through histogram (\texttt{http\_request\_duration\_seconds\_histogram}), summary, and custom bucket metrics.
+  \item Current number of users via a gauge (\texttt{http\_current\_users}).
+\end{itemize}
+
+Each metric includes label-based differentiation to allow fine-grained analysis of system behavior and performance.
+
+\subsection*{Metrics Endpoint Exposure}
+The integration also offers optional HTTP endpoint exposure via a configurable path (defaulting to \texttt{/metrics}). When enabled, this endpoint responds with metrics encoded in the OpenMetrics text exposition format. The developer can optionally include timestamps in the output by adjusting the integration configuration.
+
+\subsection*{Traffic Simulation and Example Application}
+An example Ktor application demonstrates practical usage of the metrics system. It defines various endpoints (e.g., \texttt{/}, \texttt{/search}, \texttt{/orders}) and simulates randomized traffic and error conditions to showcase the client's observability capabilities. The application uses Ktor's lifecycle hooks to launch a coroutine that generates synthetic HTTP requests at runtime, mimicking realistic load patterns. Errors and exceptions are injected stochastically to validate metrics tracking under adverse conditions.
+
+\subsection*{Normalization Strategy}
+To prevent label cardinality explosion, the integration applies path normalization using regular expressions. Numeric segments and UUIDs are replaced with a placeholder (\texttt{\{param\}}), ensuring consistent labeling for variable endpoints such as \texttt{/users/1234} or \texttt{/orders/uuid}.
+
+\subsection*{Benefits}
+This integration highlights the following benefits:
+\begin{itemize}
+  \item Minimal developer effort to enable metrics.
+  \item Full coroutine support and non-blocking observation.
+  \item Realistic and structured observability of HTTP applications.
+  \item Alignment with Prometheus best practices for metric naming and label usage.
+\end{itemize}
+
+Future enhancements may include push gateway integration or dynamic configuration via a DSL to extend support for additional deployment models.
