@@ -1,6 +1,15 @@
 package io.github.rxfa.prometheus.ktor
 
-import io.github.rxfa.prometheus.core.*
+import io.github.rxfa.prometheus.core.CollectorRegistry
+import io.github.rxfa.prometheus.core.PrometheusExporter
+import io.github.rxfa.prometheus.core.counter
+import io.github.rxfa.prometheus.core.exponentialHistogramBuckets
+import io.github.rxfa.prometheus.core.gauge
+import io.github.rxfa.prometheus.core.histogram
+import io.github.rxfa.prometheus.core.linearHistogramBuckets
+import io.github.rxfa.prometheus.core.quantile
+import io.github.rxfa.prometheus.core.quantiles
+import io.github.rxfa.prometheus.core.summary
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -50,7 +59,7 @@ class PrometheusConfig {
  */
 fun Application.installPrometheusMetrics(
     exporter: PrometheusExporter = PrometheusExporter(),
-    configure: PrometheusConfig.() -> Unit = {}
+    configure: PrometheusConfig.() -> Unit = {},
 ) {
     val config = PrometheusConfig().apply(configure)
     val ktorMetrics = KtorMetrics(exporter.registry)
@@ -71,52 +80,62 @@ fun Application.installPrometheusMetrics(
  *
  * @property registry The [CollectorRegistry] to register metrics with.
  */
-private class KtorMetrics(private val registry: CollectorRegistry) {
-    private val totalRequests = counter("http_requests_total") {
-        help("Total HTTP requests received")
-        labelNames("method", "path")
-    }
-    private val totalErrors = counter("http_requests_errors_total") {
-        help("Total HTTP requests errors")
-        labelNames("method", "status_code", "path")
-    }
-    private val totalExceptions = counter("http_exceptions_total") {
-        help("Total HTTP exceptions")
-        labelNames("method", "path", "exception_class")
-    }
+private class KtorMetrics(
+    private val registry: CollectorRegistry,
+) {
+    private val totalRequests =
+        counter("http_requests_total") {
+            help("Total HTTP requests received")
+            labelNames("method", "path")
+        }
+    private val totalErrors =
+        counter("http_requests_errors_total") {
+            help("Total HTTP requests errors")
+            labelNames("method", "status_code", "path")
+        }
+    private val totalExceptions =
+        counter("http_exceptions_total") {
+            help("Total HTTP exceptions")
+            labelNames("method", "path", "exception_class")
+        }
 
-    private val currentUsers = gauge("http_current_users") {
-        help("Current number of users")
-        labelNames("status")
-    }
+    private val currentUsers =
+        gauge("http_current_users") {
+            help("Current number of users")
+            labelNames("status")
+        }
 
-    private val httpLatencyHistogram = histogram("http_request_duration_seconds_histogram") {
-        help("Duration of HTTP requests in seconds")
-        labelNames("method", "endpoint")
-    }
+    private val httpLatencyHistogram =
+        histogram("http_request_duration_seconds_histogram") {
+            help("Duration of HTTP requests in seconds")
+            labelNames("method", "endpoint")
+        }
 
-    private val httpLatencyCustomLinear = linearHistogramBuckets("http_request_duration_custom_linear_buckets_seconds",{
-        help("Quantiles of HTTP request durations in seconds")
-        labelNames("method", "endpoint")
-    },0.0,2.0,10)
+    private val httpLatencyCustomLinear =
+        linearHistogramBuckets("http_request_duration_custom_linear_buckets_seconds", {
+            help("Quantiles of HTTP request durations in seconds")
+            labelNames("method", "endpoint")
+        }, 0.0, 2.0, 10)
 
-    private val httpLatencyCustomExponential = exponentialHistogramBuckets("http_request_duration_custom_exponential_buckets_seconds",{
-        help("Quantiles of HTTP request durations in seconds")
-        labelNames("method", "endpoint")
-    },2.0,2.0,5)
+    private val httpLatencyCustomExponential =
+        exponentialHistogramBuckets("http_request_duration_custom_exponential_buckets_seconds", {
+            help("Quantiles of HTTP request durations in seconds")
+            labelNames("method", "endpoint")
+        }, 2.0, 2.0, 5)
 
-
-    private val httpLatencySummary = summary("http_request_duration_seconds_summary") {
-        help("Duration of HTTP requests in seconds")
-        labelNames("method")
-        quantiles(
-            quantile(0.5, 0.05),   // Median with 5% error
-            quantile(0.95, 0.01),  // 95th percentile with 1% error
-            quantile(0.99, 0.001)  // 99th percentile with 0.1% error
-        )
-    }
-
-
+    private val httpLatencySummary =
+        summary("http_request_duration_seconds_summary") {
+            help("Duration of HTTP requests in seconds")
+            labelNames("method")
+            quantiles(
+                // Median with 5% error
+                quantile(0.5, 0.05),
+                // 95th percentile with 1% error
+                quantile(0.95, 0.01),
+                // 99th percentile with 0.1% error
+                quantile(0.99, 0.001),
+            )
+        }
 
     init {
         runBlocking {
@@ -139,7 +158,6 @@ private class KtorMetrics(private val registry: CollectorRegistry) {
 
             val startTime = System.nanoTime()
 
-
             proceed()
 
             val durationSeconds = (System.nanoTime() - startTime) / 1_000_000_000.0
@@ -150,7 +168,6 @@ private class KtorMetrics(private val registry: CollectorRegistry) {
 
             // Update current users gauge
             currentUsers.labels("active").inc()
-
         }
 
         // Install status pages to intercept exceptions and error status codes
@@ -170,7 +187,6 @@ private class KtorMetrics(private val registry: CollectorRegistry) {
                 totalErrors.labels(method, statusCode, path).inc()
             }
         }
-
     }
 }
 
@@ -181,13 +197,13 @@ private class KtorMetrics(private val registry: CollectorRegistry) {
  * - `/users/123/profile` -> `/users/{param}/profile`
  * - `/orders/550e8400-e29b-41d4-a716-446655440000/details` -> `/orders/{param}/details`
  */
-private fun normalizePath(path: String): String {
-    return path.split("/")
+private fun normalizePath(path: String): String =
+    path
+        .split("/")
         .joinToString("/") { segment ->
             when {
-                segment.matches(Regex("\\d+")) -> "{param}"   // numeric IDs
+                segment.matches(Regex("\\d+")) -> "{param}" // numeric IDs
                 segment.matches(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) -> "{param}" // UUID
                 else -> segment
             }
         }
-}
