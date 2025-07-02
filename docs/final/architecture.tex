@@ -61,6 +61,12 @@ The Prometheus client library is organized into a modular architecture to ensure
 Each module encapsulates a specific layer of functionality, ranging from the core metric definitions to optional platform-specific integrations for HTTP exposition.
 The current structure consists of the following modules:
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\linewidth, keepaspectratio]{./figures/module_dependencies.png}
+    \caption{Module Dependencies}
+\end{figure}
+
 \begin{itemize}
     \item \textbf{core} --- A \ac{KMP} module containing the core logic of the Prometheus client library.
     It includes the metric types (e.g., \texttt{Counter}, \texttt{Gauge}), the registry mechanism, the text
@@ -83,23 +89,6 @@ The current structure consists of the following modules:
     The Prometheus configuration is preloaded to scrape the Ktor application, and Grafana dashboards are preconfigured to visualize common metrics.
 \end{itemize}
 
-\begin{figure}[h]
-    \begin{lstlisting}
-          +-------+
-          | core  |
-          +-------+
-          /       \
-      +-----+    +-----+
-      |ktor |    |http |
-      +-----+    +-----+
-         |
-    +-----------+
-    |ktor-example|
-    +-----------+
-    \end{lstlisting}
-    \caption{Module dependencies}
-\end{figure}
-
 This modular design ensures that users only depend on the components they need.
 For example, a \ac{KMP} application targeting native platforms can rely solely on \texttt{core}, while a JVM backend
 can optionally include \texttt{ktor} or \texttt{http} depending on its architectural requirements.
@@ -110,7 +99,13 @@ The \texttt{ktor-example} module provides a practical blueprint for integration 
 
 The metric model of the Prometheus Kotlin client library provides abstractions for the four fundamental Prometheus metric types: \texttt{Counter}, \texttt{Gauge}, \texttt{Histogram}, and \texttt{Summary}. Each type has its specific semantics and API designed to facilitate common monitoring tasks in an idiomatic Kotlin manner.
 
-\subsection{Metric Types Overview}
+\subsection{Metric Types Overview}\label{subsec:metric-types-overview}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth, keepaspectratio]{./figures/metric_types}
+    \caption{Metric Types}
+\end{figure}
 
 \begin{itemize}
     \item \textbf{Counter:} Represents a cumulative metric that only increases, typically used to count discrete events such as requests, errors, or tasks completed.
@@ -122,27 +117,9 @@ The metric model of the Prometheus Kotlin client library provides abstractions f
     \item \textbf{Summary:} Provides streaming quantile estimations, allowing tracking of percentiles (e.g., median, 95th percentile) over a sliding time window.
 \end{itemize}
 
-\subsection{Class Hierarchy and Relationships}
+\subsection{Class Hierarchy and Relationships}\label{subsec:class-hierarchy-and-relationships}
 
 The metric types derive from common abstract base classes to promote code reuse and consistent behavior:
-
-\begin{verbatim}
-          +------------------+
-          |    Collector     |  (abstract base class)
-          +------------------+
-                  |
-          +------------------+
-          | SimpleCollector  |  (supports labeled metrics)
-          +------------------+
-            /      |        \
-    +----------+ +-------+ +----------+
-    | Counter  | | Gauge | | Histogram|
-    +----------+ +-------+ +----------+
-                  |
-              +---------+
-              | Summary | (subclass of SimpleCollector)
-              +---------+
-\end{verbatim}
 
 All core metric types inherit the \texttt{labels(vararg labelValues: String)} method from their base classes, allowing them to create and retrieve labeled child metrics.
 This feature enables dimensionality in metrics by associating key-value label pairs with each observation.

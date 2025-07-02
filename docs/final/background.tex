@@ -21,6 +21,12 @@ Monitoring tell us the \textit{when} and \textit{what}, and observability tells 
 \subsection{The pillars of observability}\label{subsec:the-pillars-of-observability}
 There are three telemetry types that, together make up what is usually called,
 \textbf{the three pillars of observability} - Logs, metrics and traces~\cite{ibm_observability}.\\
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth, keepaspectratio]{./figures/observability_pillars}
+    \caption{The three pillars of observability}
+\end{figure}
+
 
 \textbf{Logs} - Logs are time-stamped, complete and immutable records of specific events that occur within a system.
 They offer a granular view of what happened within a system, helping with debugging or with understanding
@@ -104,6 +110,13 @@ Prometheus main features are:
 
 \subsection{Design and Architecture}\label{subsec:design-and-architecture}
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth, keepaspectratio]{./figures/prometheus_arch}
+    \caption{Prometheus Architecture}
+\end{figure}
+
+
 The prometheus ecosystem is made up of various components, some of which are optional:
 
 \begin{itemize}
@@ -121,14 +134,15 @@ The prometheus ecosystem is made up of various components, some of which are opt
     different data visualization libraries such as Grafana for richer dashboards.
 \end{itemize}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=\linewidth, keepaspectratio]{./figures/prometheus_arch}
-    \caption{Prometheus Architecture}
-\end{figure}
-
 Prometheus fundamentally stores all data as \textit{time series}: streams of timestamped
 values belonging to the same metric and the same set of labeled dimensions~\cite{prometheus_data_model}.\\
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth, keepaspectratio]{./figures/samples_diagram}
+    \caption{Prometheus Data Model}
+\end{figure}
+
 
 Time series are uniquely identified by their metric name and optional key-value pairs called labels.\\
 The names of time series must comply with the following rules:
@@ -178,6 +192,12 @@ Prometheus client libraries offer four core metric types, as of the time of writ
 server does not make use of the type information of these metrics and all data is flattened to untyped time series.
 Only client libraries, to enable \ac{API}s tailored to the usage of specific types and the wire protocol make use of
 type information of the metrics~\cite{prometheus_metric_types}.\\
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth, keepaspectratio]{./figures/metric_types}
+    \caption{Prometheus Metric Types}
+\end{figure}
 
 \textbf{Counter} - A counter represents a cumulative metric that a value whose value can only change upwards with
 the ability of being reset to zero on restart.
