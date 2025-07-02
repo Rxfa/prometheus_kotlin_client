@@ -22,7 +22,10 @@ import kotlin.time.measureTime
  * @param block Configuration block for the [GaugeBuilder].
  * @return A configured [Gauge] instance.
  */
-public fun gauge(name: String, block: GaugeBuilder.() -> Unit): Gauge {
+public fun gauge(
+    name: String,
+    block: GaugeBuilder.() -> Unit,
+): Gauge {
     return GaugeBuilder(name).apply(block).build()
 }
 
@@ -42,7 +45,6 @@ public class Gauge internal constructor(
     unit: String = "",
     private val clock: Clock = Clock.System,
 ) : SimpleCollector<Gauge.Child>(fullName, help, labelNames, unit) {
-
     override val suffixes: Set<String> = setOf()
     override val name: String = fullName
     override val type: Type = Type.GAUGE
@@ -67,7 +69,7 @@ public class Gauge internal constructor(
         private var value = atomic(0.0.toRawBits())
 
         /** Increments the gauge by the specified amount (must be non-negative). */
-        public suspend fun inc(amount: Double){
+        public suspend fun inc(amount: Double) {
             require(amount >= 0) { "Increment must be non-negative" }
             withContext(Dispatchers.Default) {
                 value.updateAndGet { currentBits ->

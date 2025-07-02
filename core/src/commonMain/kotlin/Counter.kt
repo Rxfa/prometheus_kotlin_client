@@ -6,7 +6,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.reflect.KClass
 
-
 /**
  * DSL-style function to build and register a [Counter] using a [CounterBuilder].
  *
@@ -68,7 +67,6 @@ public class Counter internal constructor(
         return "${metricName}_total"
     }
 
-
     /**
      * Represents a labeled child of the counter metric.
      *
@@ -113,7 +111,7 @@ public class Counter internal constructor(
          *
          * @return The current value of the counter.
          */
-        public fun get(): Double =  Double.fromBits(value.value)
+        public fun get(): Double = Double.fromBits(value.value)
     }
 
     /**
@@ -123,7 +121,6 @@ public class Counter internal constructor(
      * @throws IllegalArgumentException if [amount] is negative.
      */
     public suspend fun inc(amount: Double): Unit? = noLabelsChild?.inc(amount)
-
 
     /** Increments the counter by 1.*/
     public suspend fun inc(): Unit? = noLabelsChild?.inc()

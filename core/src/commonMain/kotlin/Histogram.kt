@@ -3,7 +3,9 @@ package io.github.rxfa.prometheus.core
 import kotlinx.atomicfu.AtomicLong
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.updateAndGet
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlin.math.pow
 
@@ -17,10 +19,8 @@ import kotlin.math.pow
  */
 public fun histogram(
     name: String,
-    block: HistogramBuilder.() -> Unit
-): Histogram {
-    return HistogramBuilder(name).apply(block).build()
-}
+    block: HistogramBuilder.() -> Unit,
+): Histogram = HistogramBuilder(name).apply(block).build()
 
 /**
  * Creates a histogram with predefined [buckets].
@@ -31,12 +31,10 @@ public fun histogram(
  * @return A configured [Histogram] instance.
  */
 public fun histogramBuckets(
-    name:String,
+    name: String,
     block: HistogramBuilder.() -> Unit,
-    buckets: List<Double>
-): Histogram {
-    return HistogramBuilder(name,buckets).apply(block).build()
-}
+    buckets: List<Double>,
+): Histogram = HistogramBuilder(name, buckets).apply(block).build()
 
 /**
  * Creates a histogram with linearly spaced buckets.
@@ -53,10 +51,10 @@ public fun linearHistogramBuckets(
     block: HistogramBuilder.() -> Unit,
     start: Double,
     width: Double,
-    count: Int
+    count: Int,
 ): Histogram {
-    val buckets =(0 until count).map { start + it * width }
-    return HistogramBuilder(name,buckets).apply(block).build()
+    val buckets = (0 until count).map { start + it * width }
+    return HistogramBuilder(name, buckets).apply(block).build()
 }
 
 /**
@@ -70,13 +68,13 @@ public fun linearHistogramBuckets(
  * @return A configured [Histogram] instance.
  */
 public fun exponentialHistogramBuckets(
-    name:String,
+    name: String,
     block: HistogramBuilder.() -> Unit,
     start: Double,
     factor: Double,
-    count: Int
+    count: Int,
 ): Histogram {
-    val buckets= (0 until count).map { start * factor.pow(it.toDouble()) }
+    val buckets = (0 until count).map { start * factor.pow(it.toDouble()) }
     return HistogramBuilder(name, buckets).apply(block).build()
 }
 
@@ -91,7 +89,7 @@ public fun exponentialHistogramBuckets(
 public data class ValueHistogram(
     public val sum: Double,
     public val buckets: List<Double>,
-    public val created: Long
+    public val created: Long,
 )
 
 /**
@@ -110,18 +108,15 @@ public class Histogram internal constructor(
     labelNames: List<String> = emptyList(),
     unit: String = "",
     includeCreatedSeries: Boolean = false,
-    buckets: List<Double>
-):SimpleCollector<Histogram.Child>(fullName, help, labelNames, unit) {
-
+    buckets: List<Double>,
+) : SimpleCollector<Histogram.Child>(fullName, help, labelNames, unit) {
     override val suffixes: Set<String> = setOf()
     override val name: String = fullName
     override val type: Type = Type.HISTOGRAM
 
     private var sortedBuckets: List<Double> = buckets
 
-    override fun newChild(): Child {
-        return Child(sortedBuckets)
-    }
+    override fun newChild(): Child = Child(sortedBuckets)
 
     /**
      * Initializes the histogram with the provided bucket boundaries and validates them.
@@ -132,16 +127,18 @@ public class Histogram internal constructor(
     init {
         for (i in 0 until buckets.lastIndex) {
             if (buckets[i] >= buckets[i + 1]) {
-                throw IllegalStateException("Histogram buckets must be in increasing order: "
-                        + buckets[i] + " >= " + buckets[i + 1]);
+                throw IllegalStateException(
+                    "Histogram buckets must be in increasing order: " +
+                        buckets[i] + " >= " + buckets[i + 1],
+                )
             }
         }
         if (buckets.isEmpty()) {
-            throw IllegalStateException("Histogram must have at least one bucket.");
+            throw IllegalStateException("Histogram must have at least one bucket.")
         }
         for (label in labelNames) {
-            if (label.equals("le")) {
-                throw IllegalStateException ("Histogram cannot have a label named 'le'.");
+            if (label == "le") {
+                throw IllegalStateException("Histogram cannot have a label named 'le'.")
             }
         }
         if (buckets[buckets.size - 1] != Double.POSITIVE_INFINITY) {
@@ -157,30 +154,22 @@ public class Histogram internal constructor(
      * @property child The histogram child instance to record the duration.
      * @property start The start time of the operation in milliseconds.
      */
-    public class Timer{
-
-        private val child: Child
-        private val start: Long
-
+    public class Timer public constructor(
+        private val child: Histogram.Child,
+        private val start: Long,
+    ) {
         private val simpleTimer = SimpleTimer()
-
-        public constructor(child: Histogram.Child,start: Long) {
-            this.child = child
-            this.start = start
-        }
 
         /**
          * Records the duration of the operation and returns the elapsed time.
          *
          * @return The elapsed time in seconds.
          */
-        public suspend fun observeDuration():Double{
+        public suspend fun observeDuration(): Double {
             val elapsed = simpleTimer.elapsedSecondsFromNanos(start, simpleTimer.defaultTimeProvider.milliTime)
             child.observe(elapsed)
             return elapsed
         }
-
-
     }
 
     /**
@@ -191,17 +180,15 @@ public class Histogram internal constructor(
      * @property sum The sum of all observed values.
      * @property created The timestamp when the histogram was created.
      */
-    public inner class Child {
-
+    public inner class Child public constructor(
+        buckets: List<Double>,
+    ) {
         /**
          * Starts a timer for measuring the duration of an operation.
          *
          * @return A [Timer] instance.
          */
-        public fun startTimer():Timer{
-            return Timer(this, Clock.System.now().toEpochMilliseconds())
-        }
-
+        public fun startTimer(): Timer = Timer(this, Clock.System.now().toEpochMilliseconds())
 
         /**
          * Starts a timer for measuring the duration of an operation and returns the elapsed time in seconds.
@@ -209,12 +196,12 @@ public class Histogram internal constructor(
          * @param runnable The operation to time.
          * @return A double representing the elapsed time in seconds.
          */
-        public suspend fun time(runnable: Runnable):Double{
+        public suspend fun time(runnable: Runnable): Double {
             val start = startTimer()
-            val final: Double;
+            val final: Double
             try {
                 runnable.run()
-            }catch (e: Exception) {
+            } catch (e: Exception) {
                 throw RuntimeException("Error while running timed block", e)
             } finally {
                 final = start.observeDuration()
@@ -222,17 +209,10 @@ public class Histogram internal constructor(
             return final
         }
 
-        public constructor(buckets: List<Double>) {
-            this.upperBounds = buckets
-            this.cumulativeCounts = Array<AtomicLong>(buckets.size){
-                atomic(0L)
-            }
-        }
-        private val upperBounds: List<Double>
+        private val upperBounds: List<Double> = buckets
         private val cumulativeCounts: Array<AtomicLong>
         private val sum = atomic(0.0.toRawBits())
         private val created = Clock.System.now().toEpochMilliseconds()
-
 
         /**
          * Observes a value and records it in the histogram.
@@ -255,56 +235,53 @@ public class Histogram internal constructor(
             }
         }
 
-
-
         /**
          * Retrieves the current state of the histogram.
          *
          * @return A [ValueHistogram] instance representing the current state.
          */
-        public fun get():ValueHistogram{
+        public fun get(): ValueHistogram {
             val buckets = mutableListOf<Double>()
             var acc = 0.0
             for (i in upperBounds.indices) {
-                acc+= cumulativeCounts[i].value
+                acc += cumulativeCounts[i].value
                 buckets.add(acc)
             }
             return ValueHistogram(
                 sum = Double.fromBits(sum.value),
                 buckets = buckets,
-                created = created
+                created = created,
             )
         }
 
+        init {
+            this.cumulativeCounts =
+                Array<AtomicLong>(buckets.size) {
+                    atomic(0L)
+                }
+        }
     }
 
     /**
      * Observes a value and records it in the histogram without labels.
      */
-    public suspend fun observe(value: Double){
+    public suspend fun observe(value: Double) {
         noLabelsChild?.observe(value)
     }
-
 
     /**
      * Starts a timer for measuring the duration of an operation without labels.
      *
      * @return A double representing the elapsed time in seconds.
      */
-    public suspend fun time(runnable: Runnable): Double {
-        return noLabelsChild?.time(runnable) ?: 0.0
-    }
-
+    public suspend fun time(runnable: Runnable): Double = noLabelsChild?.time(runnable) ?: 0.0
 
     /**
      * Retrieves the current state of the histogram without labels.
      *
      * @return A [ValueHistogram] instance representing the current state.
      */
-    public fun get(): ValueHistogram {
-        return noLabelsChild?.get() ?: ValueHistogram(0.0, emptyList(), Clock.System.now().toEpochMilliseconds())
-    }
-
+    public fun get(): ValueHistogram = noLabelsChild?.get() ?: ValueHistogram(0.0, emptyList(), Clock.System.now().toEpochMilliseconds())
 
     /**
      * Collects the current metric samples for this histogram.
@@ -313,33 +290,39 @@ public class Histogram internal constructor(
      */
     override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
-        for((labels,childs) in childMetrics){
+        for ((labels, childs) in childMetrics) {
             val value = childs.get()
             val labelNamesWithLe = labelNames + "le"
             for (i in value.buckets.indices) {
                 val labelValuesWithLe = labels + ((value.buckets[i]).toString())
                 samples.add(
-                    Sample(name = fullName + "_bucket",
+                    Sample(
+                        name = fullName + "_bucket",
                         labelNames = labelNamesWithLe,
                         labelValues = labelValuesWithLe,
                         value = value.buckets[i],
-                        timestamp = value.created
-                    )
+                        timestamp = value.created,
+                    ),
                 )
             }
-            samples.add(Sample(name = fullName + "_count",
-                labelNames = labelNames,
-                labelValues = labels,
-                value = value.buckets[sortedBuckets.size-1],
-                timestamp = value.created
-            ))
-            samples.add(Sample(name = fullName + "_sum",
-                labelNames = labelNames,
-                labelValues = labels,
-                value = value.sum,
-                timestamp = value.created
-            ))
-
+            samples.add(
+                Sample(
+                    name = fullName + "_count",
+                    labelNames = labelNames,
+                    labelValues = labels,
+                    value = value.buckets[sortedBuckets.size - 1],
+                    timestamp = value.created,
+                ),
+            )
+            samples.add(
+                Sample(
+                    name = fullName + "_sum",
+                    labelNames = labelNames,
+                    labelValues = labels,
+                    value = value.sum,
+                    timestamp = value.created,
+                ),
+            )
         }
         return familySamplesList(samples)
     }
