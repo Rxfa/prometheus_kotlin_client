@@ -151,6 +151,7 @@ private class KtorMetrics(
     }
 
     fun setupMonitoring(application: Application) {
+
         application.intercept(ApplicationCallPipeline.Monitoring) {
             val method = call.request.httpMethod.value
             val path = normalizePath(call.request.path())
