@@ -142,7 +142,7 @@ class KtorTest {
             }
 
             val metrics = client.get("/metrics").bodyAsText()
-            assertContains(metrics, """http_current_users{status="active"} 1.0""")
+            assertContains(metrics, """http_current_connections{status="active"} 1.0""")
         }
 
     @Test
