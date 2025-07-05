@@ -115,10 +115,25 @@ public class GaugeBuilder(
     override fun build(): Gauge = Gauge(name, help, labelNames, unit, clock)
 }
 
+/**
+ * Builder class for creating [Histogram] metrics.
+ *
+ * Histograms are used to observe the distribution of values, such as request latencies or response sizes.
+ *
+ * @constructor Constructs a histogram builder.
+ * @param name The metric name.
+ * @param buckets Optional list of bucket boundaries for the histogram.
+ */
 public class HistogramBuilder(
     name: String,
     private val buckets: List<Double>? = null,
 ) : MetricBuilder<Histogram>(name) {
+
+    /**
+     * Builds and returns the [Histogram] instance.
+     *
+     * If no buckets are provided, a default set of linear buckets is used.
+     */
     override fun build(): Histogram {
         val defaultBuckets =
             buckets ?: listOf(
@@ -138,6 +153,18 @@ public class HistogramBuilder(
     }
 }
 
+/**
+ * Builder class for creating [Summary] metrics.
+ *
+ * Summaries are used to observe quantiles and provide a summary of observed values, such as request latencies.
+ *
+ * @constructor Constructs a summary builder.
+ * @param name The metric name.
+ * @param includeCreatedSeries Whether to include the `_created` series (timestamp of first observation).
+ * @param quantiles List of quantiles to track (e.g., 0.5 for median, 0.95 for 95th percentile) by default it's empty.
+ * @param maxAgeSeconds Maximum age of observations before they are discarded (default is 60 seconds).
+ * @param ageBuckets Number of age buckets to use for tracking observations (default is 5).
+ */
 public class SummaryBuilder internal constructor(
     name: String,
     private val includeCreatedSeries: Boolean = false,
@@ -145,5 +172,7 @@ public class SummaryBuilder internal constructor(
     private val maxAgeSeconds: Long = 60,
     private val ageBuckets: Int = 5,
 ) : MetricBuilder<Summary>(name) {
+
+    /** Sets the quantiles to track in this summary. */
     override fun build(): Summary = Summary(name, help, labelNames, unit, includeCreatedSeries, quantiles, maxAgeSeconds, ageBuckets)
 }

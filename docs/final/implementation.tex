@@ -134,31 +134,6 @@ http_requests_total{method="GET", status="200"}  123.0
 http_requests_created{method="GET", status="200"}  1.650e+09
 \end{verbatim}
 
-\subsection{Labeled vs Unlabeled Counter Incrementation}
-
-Prometheus counters in this library support both labeled and unlabeled usage. The difference between these modes lies in the ability to partition metrics by key-value identifiers (labels).
-
-\begin{itemize}
-  \item \textbf{Unlabeled Counter:}
-    \begin{verbatim}
-    val errors = counter("error_total") { help("Total errors") }
-    errors.inc()
-    \end{verbatim}
-    This counter tracks a single, global value without distinguishing between contexts.
-
-  \item \textbf{Labeled Counter:}
-    \begin{verbatim}
-    val requests = counter("http_requests_total") {
-        help("Total HTTP requests")
-        labelNames("method", "status")
-    }
-    requests.labels("GET", "200").inc()
-    \end{verbatim}
-    This counter tracks separate values for each unique combination of label values.
-\end{itemize}
-
-Using labels is powerful because it enables fine-grained observability. For example, instead of one total count of HTTP requests, you can track how many were successful GETs versus failed POSTs. However, each unique label set creates a new time series, which can increase memory usage and complexity. When fine granularity is not needed, unlabeled counters offer a simpler and more efficient alternative.
-
 %Exception Counting Utility
 
 \subsection{Exception Counting Utility}
@@ -311,52 +286,6 @@ for ((labels, child) in childMetrics) {
 
 Each sample includes its respective label values and the current gauge reading. Label handling logic is inherited from \texttt{SimpleCollector}, ensuring consistency across all metric types in the library.
 
-\subsection{What Are Samples in Gauge Metrics?}
-
-In Prometheus, a \textit{sample} is a single point of measurement containing a metric name, optional labels, and a value. For a \texttt{Gauge}, which represents a numerical value that can increase or decrease, samples are used to report the current value at collection time.
-
-This implementation stores one or more \texttt{Sample} instances per gauge, depending on the number of label combinations used. The \texttt{collect()} method gathers these samples by iterating through all registered \texttt{Child} instances, each tied to a distinct label set.
-
-Unlike counters, gauges do not enforce monotonicity and can go up or down depending on the application's state (e.g., number of in-flight requests, memory usage, or temperature). Each sample accurately reflects the current value for its label set at the moment of collection.
-
-\vspace{0.5em}
-\noindent
-\textbf{Example Sample Output}:
-\begin{verbatim}
-room_temperature_celsius{room="kitchen"} 22.5
-room_temperature_celsius{room="bedroom"} 19.0
-\end{verbatim}
-
-\subsection{Labeled vs Unlabeled Gauge Incrementation}
-
-Like counters, gauges can be used in labeled and unlabeled modes. The primary distinction lies in how they track different instances of the same metric.
-
-\begin{itemize}
-  \item \textbf{Unlabeled Gauge:}
-    \begin{verbatim}
-    val temperature = gauge("room_temperature_celsius") {
-        help("Room temperature")
-    }
-    temperature.set(22.5)
-    \end{verbatim}
-    This gauge tracks a single, global value, without any differentiation between contexts.
-
-  \item \textbf{Labeled Gauge:}
-    \begin{verbatim}
-    val temperature = gauge("room_temperature_celsius") {
-        help("Room temperature")
-        labelNames("room")
-    }
-    temperature.labels("kitchen").set(22.5)
-    temperature.labels("bedroom").set(19.0)
-    \end{verbatim}
-    Labeled gauges maintain separate values for each unique combination of label values. This is useful when the same type of measurement must be tracked in different categories, such as rooms, users, or endpoints.
-\end{itemize}
-
-Labeled gauges provide granular observability but require careful management of label cardinality to avoid performance issues. Unlabeled gauges are simpler and more efficient when only one measurement context is needed.
-
-
-
 \subsection{Time-Based Gauge Values}
 A gauge can also be set to the current system time in Unix seconds using the \texttt{setToCurrentTime()} method. This is useful for tracking freshness or heartbeat-style metrics:
 
@@ -479,27 +408,6 @@ http_request_duration_seconds_bucket{method="GET", endpoint="/", le="0.5"} 7
 http_request_duration_seconds_count{method="GET", endpoint="/"} 11
 http_request_duration_seconds_sum{method="GET", endpoint="/"} 3.42
 \end{verbatim}
-
-\subsection{Labeled vs Unlabeled Histogram Observation}
-
-Histograms support both labeled and unlabeled usage:
-
-\paragraph{Unlabeled Histogram:}
-\begin{verbatim}
-val durations = histogram("job_duration_seconds") { help("Job durations") }
-durations.observe(1.23)
-\end{verbatim}
-
-\paragraph{Labeled Histogram:}
-\begin{verbatim}
-val durations = histogram("job_duration_seconds") {
-    help("Job durations")
-    labelNames("job", "status")
-}
-durations.labels("backup", "success").observe(0.75)
-\end{verbatim}
-
-Each label set maintains its own independent observation state. This allows for detailed breakdowns, such as per-endpoint or per-method latency.
 
 \subsection{Histogram State Retrieval}
 
@@ -736,27 +644,6 @@ http_request_duration_seconds_count{method="GET", endpoint="/"} 128
 http_request_duration_seconds_sum{method="GET", endpoint="/"} 89.5
 \end{verbatim}
 
-\subsection{Labeled vs Unlabeled Summary Observation}
-
-Summaries support both labeled and unlabeled usage:
-
-\paragraph{Unlabeled Summary:}
-\begin{verbatim}
-val summary = summary("job_duration_seconds") { help("Duration of jobs") }
-summary.observe(1.2)
-\end{verbatim}
-
-\paragraph{Labeled Summary:}
-\begin{verbatim}
-val summary = summary("job_duration_seconds") {
-help("Duration of jobs")
-labelNames("job", "status")
-}
-summary.labels("backup", "success").observe(0.9)
-\end{verbatim}
-
-Each label set maintains its own independent rolling state and quantile estimators.
-
 \subsection{Summary State Retrieval}
 
 Each \texttt{Child} exposes its current state via the \texttt{get()} method, returning a \texttt{ValueSummary}:
@@ -804,6 +691,81 @@ A globally accessible instance, \texttt{CollectorRegistry.defaultRegistry}, is p
 
 This design enables clean separation of metric definition from metric exposition and supports safe usage across multiple coroutines and threads, which is essential in modern Kotlin-based server applications.
 
+\section{Collector Abstraction and Metric Semantics}
+
+The \texttt{Collector} class serves as the foundational abstraction for all Prometheus-compatible metrics in the system. It defines a consistent interface and behavior for metric collection, exposition, and validation.
+
+Each collector encapsulates the metadata and structure necessary for Prometheus to interpret the collected data, including its name, help text, labels, and unit of measurement. Metric data is grouped under a \texttt{MetricFamilySamples} object, which aggregates individual \texttt{Sample}s for related metrics.
+
+Key responsibilities and components include:
+\begin{itemize}
+    \item \textbf{Metric Metadata}: The collector stores the full metric name, a human-readable help description, an optional unit (e.g., "seconds", "bytes"), and a list of label names. It ensures consistency and compliance with Prometheus naming conventions.
+    
+    \item \textbf{Metric Types}: Each collector declares a specific type (\texttt{COUNTER}, \texttt{GAUGE}, \texttt{HISTOGRAM}, \texttt{SUMMARY}, or \texttt{UNKNOWN}) via the \texttt{Type} enum. This type determines how Prometheus interprets and aggregates the metric.
+
+    \item \textbf{Collection Mechanism}: The abstract \texttt{collect()} method must be implemented by all concrete collectors. It returns a \texttt{MetricFamilySamples} object containing all current samples for that metric family.
+    
+    \item \textbf{Sample Representation}: Each \texttt{Sample} includes a name, label names and values, a numeric value, and an optional timestamp. This granularity enables high-resolution monitoring with fine-grained tagging.
+
+    \item \textbf{Validation Utilities}: The class provides companion methods to validate metric names, units, and label names. These enforce Prometheus naming standards, rejecting reserved or invalid identifiers at runtime.
+    
+    \item \textbf{Registration}: A collector can be registered with a \texttt{CollectorRegistry} via the \texttt{register()} method. This supports modular metric definition and flexible exposition strategies.
+\end{itemize}
+
+By abstracting metric semantics into the \texttt{Collector} class, this design promotes type safety, extensibility, and decouples the act of data collection from its exposition. It ensures all metrics adhere to Prometheus's structural expectations, while allowing concrete metric types (e.g., counter, gauge) to focus on specific behaviors and lifecycles.
+
+\section{Labeled Metric Management via \texttt{SimpleCollector}}
+
+The \texttt{SimpleCollector} class provides a generic abstraction for Prometheus metric types that support labeled variants, such as \texttt{Counter} and \texttt{Gauge}. It defines a reusable mechanism for managing child metric instances based on label combinations, while enforcing Prometheus naming and structural conventions.
+
+This class is parameterized by a \texttt{Child} type, which represents the concrete labeled metric (e.g., \texttt{Counter.Child}). Subclasses are responsible for implementing the creation of new child instances and appending any required metric name suffixes.
+
+Key responsibilities include:
+\begin{itemize}
+    \item \textbf{Label Validation and Mapping}: Upon instantiation, all provided label names are validated against Prometheus rules. The \texttt{labels()} function ensures that only valid, non-empty label value sets are used and retrieves or lazily initializes the corresponding child metric.
+
+    \item \textbf{Child Management}: The class maintains an internal map from label value combinations to child instances. It supports dynamic addition, removal, and clearing of these child entries. If the collector has no labels, a special \texttt{noLabelsChild} reference is initialized automatically.
+
+    \item \textbf{Suffix Enforcement}: Subclasses may define a set of expected suffixes (e.g., \texttt{\_total} for counters). The \texttt{buildMetricName()} method ensures that units or suffixes are properly appended to the exposed metric name.
+
+    \item \textbf{Metric Family Construction}: Collected samples from children are wrapped using the \texttt{familySamplesList()} utility. This creates a unified \texttt{MetricFamilySamples} object for Prometheus exposition.
+
+    \item \textbf{Safety and Consistency}: All interactions with label-based children are type-safe and exception-aware. The system guarantees structural consistency, rejecting mismatched or malformed label usages at runtime.
+\end{itemize}
+
+By encapsulating label-aware logic in a shared superclass, \texttt{SimpleCollector} allows metric implementations to focus solely on their measurement semantics (e.g., counting or gauging), while reusing a robust and consistent infrastructure for label-based instantiation and exposition.
+
+\section{Metric Builder DSL and Construction Logic}
+
+To provide a fluent and idiomatic way of constructing Prometheus metric types in Kotlin, the library introduces the \texttt{MetricBuilder} abstraction. This builder-based DSL simplifies the creation of metrics by offering a composable, readable configuration interface, while preserving type safety and flexibility.
+
+The \texttt{MetricBuilder<T>} abstract class serves as the foundation for type-specific builders, with \texttt{T} constrained to subclasses of \texttt{SimpleCollector}. Each concrete builder configures properties such as metric name, help text, label names, and unit, before instantiating the corresponding collector type.
+
+\subsection*{Core Builder Features}
+\begin{itemize}
+    \item \textbf{Help Description}: Configurable via \texttt{help()}, this string describes what the metric measures.
+    
+    \item \textbf{Label Configuration}: The \texttt{labelNames()} function accepts a variable-length list of label identifiers, validated according to Prometheus naming rules.
+    
+    \item \textbf{Unit Specification}: The \texttt{unit()} function defines the measurement unit (e.g., ``seconds'', ``requests'') used in the metric exposition.
+    
+    \item \textbf{Fluent Style}: Each setter method returns \texttt{this} via Kotlin’s \texttt{apply} function, enabling idiomatic method chaining.
+\end{itemize}
+
+\subsection*{Specialized Builders}
+Each metric type has a corresponding builder class extending \texttt{MetricBuilder}, with additional configuration as needed:
+
+\begin{itemize}
+    \item \textbf{CounterBuilder}: Supports a boolean flag \texttt{includeCreatedSeries}, allowing inclusion of the \texttt{\_created} metric for tracking the first observation timestamp.
+
+    \item \textbf{GaugeBuilder}: Accepts an optional \texttt{Clock} instance, useful for testability or overriding time behavior in metrics with time-based semantics.
+
+    \item \textbf{HistogramBuilder}: Supports an optional list of histogram bucket boundaries. If none are provided, a reasonable default set of latency buckets is used.
+
+    \item \textbf{SummaryBuilder}: Allows configuration of quantiles, observation retention via \texttt{maxAgeSeconds}, number of \texttt{ageBuckets}, and optional inclusion of a \texttt{\_created} series.
+\end{itemize}
+
+Each builder encapsulates not only the construction of a collector but also the logic and validation required for metric compliance. This promotes clear separation between metric definition and usage, while enabling expressive and ergonomic integration in Kotlin applications.
 
 
 \section{Ktor Integration}
