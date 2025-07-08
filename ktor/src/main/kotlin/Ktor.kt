@@ -151,7 +151,6 @@ private class KtorMetrics(
     }
 
     fun setupMonitoring(application: Application) {
-
         application.intercept(ApplicationCallPipeline.Monitoring) {
             val method = call.request.httpMethod.value
             val path = normalizePath(call.request.path())
@@ -166,7 +165,6 @@ private class KtorMetrics(
             httpLatencyCustomLinear.labels(method, path).observe(durationSeconds)
             httpLatencyCustomExponential.labels(method, path).observe(durationSeconds)
             httpLatencySummary.labels(method).observe(durationSeconds)
-
         }
 
         // Install status pages to intercept exceptions and error status codes

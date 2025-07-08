@@ -128,7 +128,6 @@ public class HistogramBuilder(
     name: String,
     private val buckets: List<Double>? = null,
 ) : MetricBuilder<Histogram>(name) {
-
     /**
      * Builds and returns the [Histogram] instance.
      *
@@ -172,7 +171,6 @@ public class SummaryBuilder internal constructor(
     private val maxAgeSeconds: Long = 60,
     private val ageBuckets: Int = 5,
 ) : MetricBuilder<Summary>(name) {
-
     /** Sets the quantiles to track in this summary. */
     override fun build(): Summary = Summary(name, help, labelNames, unit, includeCreatedSeries, quantiles, maxAgeSeconds, ageBuckets)
 }
