@@ -427,3 +427,38 @@ The responsibilities are well-separated:
 \end{itemize}
 
 This modular approach ensures that the exposition logic can be reused across different backends and integrated into various HTTP frameworks without duplicating formatting logic.
+
+
+\section{Benchmarks}
+
+To validate the performance and runtime characteristics of our Kotlin-native Prometheus library, we conducted comparative benchmarks against the official Java Prometheus client. These benchmarks were designed to simulate real-world usage patterns involving high-throughput counter operations, as these are among the most common metrics in production systems.
+
+To simulate asynchronous environments, both clients used a shared \texttt{Channel<Unit>} that dispatches increment signals to a coroutine-based background consumer. This setup closely mirrors usage in high-concurrency environments like HTTP servers or job schedulers.
+
+\subsection*{Benchmark Configuration}
+\begin{itemize}
+    \item \textbf{Scope}: \texttt{Thread} (isolated state per thread)
+    \item \textbf{Benchmark Mode}: \texttt{Throughput}
+    \item \textbf{Time Unit}: \texttt{Milliseconds}
+    \item \textbf{Channel Buffer}: Size 1024 with \texttt{BufferOverflow.DROP\_OLDEST}
+\end{itemize}
+
+\subsection*{Client Implementations}
+
+\textbf{Java Client}: Used the official Prometheus Java library (\texttt{io.prometheus.client.Counter}). Metrics were created and registered globally with a background coroutine processing increment requests.
+
+\textbf{Kotlin Client}: Used our own DSL-based Kotlin implementation (\texttt{io.github.rxfa.prometheus.core.Counter}). The setup mirrors the Java version, including coroutine usage and buffering strategy.
+
+\subsection*{Results Overview}
+
+While exact figures vary depending on runtime conditions, our benchmarks consistently show that:
+\begin{itemize}
+    \item The Kotlin client offers comparable throughput for each operation, with minimal performance overhead despite its idiomatic and coroutine-centric architecture.
+    \item In latency-sensitive paths, the Kotlin client maintains competitive performance by minimizing locking and leveraging Kotlin’s structured concurrency and non-blocking primitives.
+\end{itemize}
+
+\subsection*{Takeaways}
+
+The results demonstrate that a fully idiomatic Kotlin Prometheus client can achieve parity with the mature Java implementation in common operational scenarios, while offering a significantly more expressive and safe API surface for Kotlin developers.
+
+This validates our architectural decisions around coroutine integration, label-safe design, and type-safe builders, and provides confidence that our library is suitable for production monitoring workloads in modern Kotlin services.

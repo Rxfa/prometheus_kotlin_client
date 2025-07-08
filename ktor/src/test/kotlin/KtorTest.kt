@@ -1,12 +1,21 @@
 import io.github.rxfa.prometheus.core.CollectorRegistry
 import io.github.rxfa.prometheus.ktor.installPrometheusMetrics
-import io.ktor.client.request.get
+import io.ktor.client.request.*
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
+import io.ktor.utils.io.*
+import io.ktor.utils.io.locks.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -142,8 +151,53 @@ class KtorTest {
             }
 
             val metrics = client.get("/metrics").bodyAsText()
-            assertContains(metrics, """http_current_users{status="active"} 1.0""")
+            assertContains(metrics, """http_current_connections{status="active"} 1.0""")
         }
+
+    @Test
+    fun `current users gauge is updated and dec`() = testApplication {
+        val channel = Channel<Unit>()
+        application {
+
+            installPrometheusMetrics()
+            routing {
+                get("/active") {
+                    channel.send(Unit)
+                    call.respondText("Active")
+                    channel.receive()
+                }
+            }
+        }
+
+        runBlocking {
+            // Start one that awaits
+            val job = launch {
+                client.get("/active").apply {
+                    assertEquals(HttpStatusCode.OK, status)
+                }
+            }
+            channel.receive()
+            // Now send a second request to trigger /metrics while the first is still active
+            val metricsfirst = client.get("/metrics").bodyAsText()
+
+            assertContains(metricsfirst, """http_current_connections{status="active"} 2.0""")
+
+            // Wait briefly to ensure the first request is still in progress
+
+            channel.send(Unit)
+
+            job.join()
+            // Now after dec
+            val metrics = client.get("/metrics").bodyAsText()
+
+           assertContains(metrics, """http_current_connections{status="active"} 1.0""")
+
+
+        }
+
+    }
+
+
 
     @Test
     fun `http request duration histogram is updated`() =

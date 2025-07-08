@@ -99,9 +99,9 @@ private class KtorMetrics(
             labelNames("method", "path", "exception_class")
         }
 
-    private val currentUsers =
-        gauge("http_current_users") {
-            help("Current number of users")
+    private val currentConnections =
+        gauge("http_current_connections") {
+            help("Current number of connections")
             labelNames("status")
         }
 
@@ -142,7 +142,7 @@ private class KtorMetrics(
             registry.register(totalRequests)
             registry.register(totalErrors)
             registry.register(totalExceptions)
-            registry.register(currentUsers)
+            registry.register(currentConnections)
             registry.register(httpLatencyHistogram)
             registry.register(httpLatencyCustomLinear)
             registry.register(httpLatencyCustomExponential)
@@ -151,23 +151,22 @@ private class KtorMetrics(
     }
 
     fun setupMonitoring(application: Application) {
+
         application.intercept(ApplicationCallPipeline.Monitoring) {
             val method = call.request.httpMethod.value
             val path = normalizePath(call.request.path())
             totalRequests.labels(method, path).inc()
 
             val startTime = System.nanoTime()
-
+            currentConnections.labels("active").inc()
             proceed()
-
+            currentConnections.labels("active").dec()
             val durationSeconds = (System.nanoTime() - startTime) / 1_000_000_000.0
             httpLatencyHistogram.labels(method, path).observe(durationSeconds)
             httpLatencyCustomLinear.labels(method, path).observe(durationSeconds)
             httpLatencyCustomExponential.labels(method, path).observe(durationSeconds)
             httpLatencySummary.labels(method).observe(durationSeconds)
 
-            // Update current users gauge
-            currentUsers.labels("active").inc()
         }
 
         // Install status pages to intercept exceptions and error status codes
