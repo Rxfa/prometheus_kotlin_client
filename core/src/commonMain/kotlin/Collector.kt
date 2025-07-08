@@ -21,16 +21,19 @@ public abstract class Collector(
      * The base name of the metric (without unit suffix).
      */
     public abstract val name: String
+
     /**
      * The metric type (e.g., counter, gauge).
      */
     public abstract val type: Type
+
     /**
      * Collects the current set of metric samples.
      *
      * @return A [MetricFamilySamples] containing all samples for this metric.
      */
     public abstract fun collect(): MetricFamilySamples
+
     /**
      * Enum representing the types of Prometheus metrics.
      *
@@ -60,7 +63,7 @@ public abstract class Collector(
         public val unit: String = "",
         public val type: Type,
         public val help: String,
-        public val samples: List<Sample>
+        public val samples: List<Sample>,
     )
 
     /**
@@ -84,9 +87,8 @@ public abstract class Collector(
         public val labelNames: List<String>,
         public val labelValues: List<String>,
         public val value: Double,
-        public val timestamp: Long = getCurrentMillis()
+        public val timestamp: Long = getCurrentMillis(),
     )
-
 
     /**
      * Registers this collector in the given [CollectorRegistry].
@@ -103,7 +105,7 @@ public abstract class Collector(
         private val validBaseUnits =
             setOf(
                 "seconds", "celsius", "kelvin", "meters", "bytes", "ratio", "volts", "amperes",
-                "joules", "grams"
+                "joules", "grams",
             )
         private val metricNameRegex = Regex("[a-zA-Z_:][a-zA-Z0-9_:]*")
         private val metricLabelNameRegex = Regex("[a-zA-Z_][a-zA-Z0-9_]*")
@@ -115,7 +117,7 @@ public abstract class Collector(
          * @param name The metric name to check.
          * @throws IllegalArgumentException if the name is invalid.
          */
-        public fun checkMetricName(name: String){
+        public fun checkMetricName(name: String) {
             require(metricNameRegex.matches(name)) {
                 "Metric name '$name' is not valid."
             }
@@ -127,7 +129,7 @@ public abstract class Collector(
          * @param unit The unit name to check.
          * @throws IllegalArgumentException if the unit name is invalid.
          */
-        public fun checkUnitName(unit: String){
+        public fun checkUnitName(unit: String) {
             require(unit.isEmpty() || unit in validBaseUnits) {
                 "Metric name '$unit' is not valid."
             }
@@ -142,9 +144,9 @@ public abstract class Collector(
          * @param labelName The label name to check.
          * @throws IllegalArgumentException if the label name is invalid or reserved.
          */
-        public fun checkMetricLabelName(labelName: String){
+        public fun checkMetricLabelName(labelName: String) {
             require(metricLabelNameRegex.matches(labelName)) { "Metric label name '$labelName' is not valid." }
-            require(!reservedMetricLabelNameRegex.matches(labelName)){
+            require(!reservedMetricLabelNameRegex.matches(labelName)) {
                 "Metric label name '$labelName' is not valid. Reserved for internal use."
             }
         }

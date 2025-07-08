@@ -29,4 +29,3 @@ jmh {
     timeOnIteration.set("1s")
     resultFormat.set("JSON")
 }
-

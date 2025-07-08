@@ -1,0 +1,33 @@
+\chapter{Future Work} \label{cap:future}
+
+\section{Expanding Ecosystem Integrations}
+While the current Prometheus client supports integration with Ktor, future development should focus on extending support to other popular server frameworks and platforms within the Kotlin ecosystem. This includes native support for:
+\begin{itemize}
+    \item \textbf{Spring Boot (Kotlin DSL):} Enabling Prometheus metrics registration via auto-configuration and Spring Actuator endpoints.
+    \item \textbf{Micronaut and Koin:} Providing lightweight instrumentation tailored for dependency-injection-heavy applications.
+    \item \textbf{Android and Kotlin Multiplatform:} Extending observability tooling to mobile or cross-platform environments where Prometheus scraping is less common, potentially using push-based collection or local aggregators.
+\end{itemize}
+
+Such integrations would promote broader adoption by reducing the friction for developers building on top of different stacks.
+
+\section{Improve Integration with Well-Known Kotlin Frameworks}
+The current Ktor integration demonstrates the feasibility of lightweight, coroutine-friendly metric collection. However, more ergonomic integrations can be achieved by:
+\begin{itemize}
+    \item Introducing \textbf{Kotlin-style DSLs} for declaratively registering metrics at application startup.
+    \item Offering built-in support for Ktor’s typed routing, allowing route-specific metrics without requiring manual normalization or labeling.
+    \item Enabling pluggable interceptors to monitor application features like database access, authentication, or external API calls.
+\end{itemize}
+
+Providing idiomatic APIs that reflect Kotlin’s language features (extension functions, delegation, lambdas) would help developers embed metrics more naturally into their applications.
+
+\section{Automatic JVM Metrics Collection}
+A key enhancement for production-readiness is enabling automatic collection of runtime-level metrics from the JVM environment. This includes:
+\begin{itemize}
+    \item \textbf{Garbage collection and memory usage:} Exposing heap/non-heap statistics and GC pause durations.
+    \item \textbf{Thread metrics:} Monitoring live threads, daemon threads, and blocked thread counts.
+    \item \textbf{Class loading and compilation metrics:} Tracking class definitions, unloads, and JIT compilation time.
+\end{itemize}
+
+These metrics are critical for performance tuning and operational visibility, especially in cloud-native deployments. Leveraging the standard \texttt{java.lang.management} API, these metrics can be collected automatically on JVM startup and registered in the Prometheus client’s registry.
+
+Combining application-level and system-level metrics would provide a complete observability picture, aligning the client with the capabilities offered by the official Prometheus Java client.

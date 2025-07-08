@@ -1,0 +1,58 @@
+\chapter{Evaluation and Limitations} \label{cap:evaluation}
+
+\section{Functional Validation}
+
+The Kotlin Prometheus client was functionally validated against the \textit{OpenMetrics} specification~\cite{openmetrics-spec}, ensuring compliance with required formatting rules, metadata emission, and semantic conventions.
+
+To validate correctness, unit tests were written to verify:
+\begin{itemize}
+  \item Label handling and metric uniqueness.
+  \item Output formatting according to OpenMetrics text exposition format.
+  \item Correct behavior of metric operations (\texttt{inc}, \texttt{get}, \texttt{set}) across gauges, counters, histograms, and summaries.
+  \item Accurate quantile configuration and observation bucketing for summaries and histograms.
+  \item Safe concurrent access using coroutines and \texttt{atomicfu} primitives.
+\end{itemize}
+
+Support for histograms includes both linear and exponential bucket configuration. Summary metrics were validated for configurable quantile tracking and tolerances. The client was successfully scraped using a Prometheus server, confirming its compatibility with external collectors and exporters.
+
+\section{Performance Considerations}
+
+The Kotlin client prioritizes coroutine-friendly concurrency and safe metric mutation over raw throughput. As shown in benchmarking (see Chapter~\ref{ch:architecture}), read-heavy operations (\texttt{get}) perform exceptionally well and sometimes surpass the Java client in throughput.
+
+Write-heavy operations such as \texttt{inc()}, \texttt{set()}, and \texttt{observe()} demonstrate slightly lower performance due to coroutine scheduling and atomic synchronization overhead. Histograms and summaries involve more complex logic (e.g., bucketing, rank approximation), which adds some cost to observation recording. However, the performance remains acceptable and predictable under load.
+
+Despite this overhead, the client maintains stable performance under high concurrency thanks to:
+\begin{itemize}
+  \item Non-blocking metric access patterns.
+  \item Scoped coroutine isolation for metric operations.
+  \item Use of lock-free atomic primitives.
+\end{itemize}
+
+\section{Comparison with Other Clients}
+
+When compared to the official Java Prometheus client:
+\begin{itemize}
+  \item The Kotlin client has a more idiomatic API tailored to Kotlin, with extension functions, lambdas, and DSL-style builders.
+  \item Coroutine support enables suspendable metric operations and better alignment with modern Kotlin concurrency models.
+  \item Histograms and summaries follow a simpler configuration model while remaining fully compliant with OpenMetrics.
+  \item Mutation operations are slightly slower due to Kotlin's atomic wrappers instead of Java's \texttt{LongAdder}.
+\end{itemize}
+
+The inclusion of histogram and summary support brings metric coverage on par with the Java client, while preserving the Kotlin-first design philosophy. The implementation was validated against expected output structures and snapshot comparisons with Java-based benchmarks.
+
+\section{Known Limitations}
+
+While the Kotlin Prometheus client provides robust core features and coroutine support, some limitations remain:
+\begin{itemize}
+  \item \textbf{Limited metric types:} The client currently supports only core metric types—\texttt{counter}, \texttt{gauge}, \texttt{histogram}, and \texttt{summary}. More specialized metrics such as \texttt{info}, \texttt{state\_set}, or \texttt{enum} are not implemented.
+  \item \textbf{No use of \texttt{LongAdder}:} The client avoids using JVM-specific classes like \texttt{LongAdder}, which offer superior write throughput in high-concurrency environments. Instead, it relies on portable atomic primitives to ensure coroutine safety, at the cost of some raw performance.
+  \item \textbf{No PushGateway support:} Push-based metric delivery to Prometheus (e.g., via PushGateway) is not currently supported.
+\end{itemize}
+
+Future enhancements could address these limitations by:
+\begin{itemize}
+  \item Adding support for PushGateway integration.
+  \item Extending metric coverage to include specialized types such as \texttt{info} and \texttt{state\_set}.
+  \item Exploring conditional use of \texttt{LongAdder} via Java interop for high-performance counters.  \item Supporting dynamic histogram configuration.
+\end{itemize}
+

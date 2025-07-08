@@ -16,11 +16,11 @@ public abstract class SimpleCollector<Child>(
     fullName: String,
     help: String,
     labelNames: List<String>,
-    unit: String
+    unit: String,
 ) : Collector(fullName, help, labelNames, unit) {
     init {
         checkMetricName(fullName)
-        labelNames.forEach{ checkMetricLabelName(it) }
+        labelNames.forEach { checkMetricLabelName(it) }
         checkUnitName(unit)
     }
 
@@ -75,7 +75,7 @@ public abstract class SimpleCollector<Child>(
     /**
      * Removes all labeled child instances and resets the no-label child (if applicable).
      */
-    public fun clear(){
+    public fun clear() {
         childMetrics.clear()
         initializeNoLabelsChild()
     }
@@ -88,8 +88,8 @@ public abstract class SimpleCollector<Child>(
      * myGauge.inc()
      * ```
      */
-    protected fun initializeNoLabelsChild(){
-        if(labelNames.isEmpty()){
+    protected fun initializeNoLabelsChild() {
+        if (labelNames.isEmpty()) {
             noLabelsChild = labels()
         }
     }
@@ -100,9 +100,7 @@ public abstract class SimpleCollector<Child>(
      * @param samples The list of collected samples from child instances.
      * @return A [MetricFamilySamples] representing this collector’s state.
      */
-    protected fun familySamplesList(
-        samples: List<Sample>
-    ): MetricFamilySamples {
+    protected fun familySamplesList(samples: List<Sample>): MetricFamilySamples {
         return MetricFamilySamples(name, unit, type, help, samples)
     }
 
@@ -115,10 +113,10 @@ public abstract class SimpleCollector<Child>(
      *
      * @return the fully constructed metric name with all required suffixes
      */
-    protected open fun buildMetricName(): String{
+    protected open fun buildMetricName(): String {
         var metricName: String = fullName
         if (unit.isNotBlank() && !metricName.endsWith(unit)) {
-            metricName = "${metricName}_${unit}"
+            metricName = "${metricName}_$unit"
         }
         return metricName
     }

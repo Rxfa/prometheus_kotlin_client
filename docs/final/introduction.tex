@@ -1,0 +1,147 @@
+%
+% Chapter 1
+%
+\chapter{Introduction} \label{ch:introduction}
+
+
+\section{Context and Motivation}\label{sec:context-and-motivation}
+Over the past few decades, we have been witnessing remarkable advancements on our software systems
+and their architecture.\\
+
+The first computers, mainframe computers, Harvard Mark I and the \ac{ENIAC} showed up in the 1930s-1940s and where
+developed for military and research purposes.
+These were large, powerful hardware machines that took up to an entire room.
+The software architecture for these applications was monolithic, meaning that they were simple, self-contained and
+independent of other applications~\cite{orkes_software_architecture_evolution, wikipedia_monolithic}.\\
+
+Networks connect and facilitate communication between computers--mainframe to terminal, mainframe to mainframe and
+later client to server.
+The development of network technology from 1958 onwards enabled mainframes to be connected
+electronically, transforming them from isolated machines to multi-user computers that were connected to multiple
+terminals.
+\ac{ARPANET} was the first public, wide-area computer network, going live in 1969.
+It communicated using
+packet switching, which went on to serve as the foundation for modern-day Internet as we know it.
+Network technology popularized the client-server structure in the 80s, where an application is divided into a
+server and a client communicate over a network.
+This is a very familiar structure to us today: a client, typically a
+desktop computer, remotely makes a request to a server, which returns a response.
+This way we can partition tasks
+and workloads, the server will work on the processing and retrieval of a piece of data, and the client will in turn
+present it~\cite{orkes_software_architecture_evolution, wikipedia_client_server_model}.\\
+
+1983 marked the year of the Internet, a global system of computer networks that used the \ac{TCP/IP} protocol to
+facilitate communication between devices and applications.
+This was the backbone for \ac{FTP} programs, \ac{SSH} systems, and of course, the World Wide Web.
+The invention of the web and its latent possibilities soon kicked off the next wave of application development.
+Instead of building a dedicated client for your client for your application, you could simply build a website to be
+hosted on the web~\cite{orkes_software_architecture_evolution}.\\
+
+As application development grew, a monolithic codebase became more unwieldy to manage, and it became clear that
+capabilities and data stored in a system could be reused.
+To address this pain point, modularization became a topic of discussion, and in the 90s the first N-tiered
+applications showed up, for the first time we saw the server being split into two tiers: the application server and
+the database, the application held all the application and business logic, while the database server, stored the
+data recorded, which reduced latency at high processing volumes.
+Around the same time, \ac{SOA} emerged as an architectural pattern, and we saw applications split into multiple
+services, each design to perform a specific job which could be things like processing payments or verifying user
+identities, this had benefits such as an increased scalability as single services could be scaled up or down
+depending on demand without having to make changes to the entire system
+~\cite{orkes_software_architecture_evolution, oracle_soa, port_soa}.\\
+
+\ac{SOA} set the stage for the move from traditional desktop applications to a new mode of software applications - \ac{SaaS},
+but it was the invention of virtual machines and cloud computing that further spurred the explosion of \ac{SaaS}
+products in the coming decades.
+Machine virtualization exists since the 1960s, but this technology only came into
+mainstream use in the 2000s.
+It at this period that Amazon, followed by companies like Google, Microsoft and Oracle identified the lucrative that
+virtualization offered: managed cloud computing services.
+With cloud computing services like Amazon \ac{EC2}, companies could rent \ac{VM}s for processing power and scale as
+needed~\cite{orkes_software_architecture_evolution}.\\
+
+The 2010s were the culmination of multiple trends towards distributed computing.
+Fueled by the need for third-party access to their services, the first commercial \ac{API}s were lauched in the
+2000 by Salesforce and eBay, to enable their costumers and partners to integrate features onto their own sites and
+applications.
+From Google Maps and Stripe to Twilio and OpenAI, the \ac{API} economy has ballooned since, powering integrated
+features across the web.
+In the same vein, microservices took off when scaling companies like Netflix and Amazon needed to speed up and
+streamline the development cycle, which was slowed by a monolithic architecture.
+By splitting up an application into individual microservices, each with its own database, teams could independently update and deploy them, leading to
+faster releases and improvements.\cite{orkes_software_architecture_evolution}
+The growth in the adoption of this architectural style was heavily supported by the emergence of containers.\\
+
+As we move into the present decade, software systems have become increasingly complex and distributed.
+Modern applications often consist of hundreds or thousands of microservices, deployed across hybrid and multi-cloud environments, communicating asynchronously via APIs, message queues, and event streams.
+Containers and orchestration platforms like Kubernetes have become the de facto standard for managing these
+distributed components at scale\cite{devtron_kubernetes}.
+While this architectural evolution brings immense benefits—such as scalability, resilience, and faster development cycles—it also introduces significant operational challenges.
+The large number of independent moving parts, dynamic scaling, and network dependencies make it difficult to predict
+and diagnose failures or performance degradation using traditional reactive methods.\\
+
+Consequently, couple with more stringent \ac{SLA}s than ever, for multiple reasons, organizations now emphasize
+observability, the
+ability to
+measure a
+system's
+current
+state based
+on its
+external outputs, recorded as metrics, logs, and traces\cite{dynatrace_observability}.
+Observability enables a proactive approach to maintaining a systems reliability and performance standards, allowing
+teams to detect
+anomalies
+early,
+understand complex interactions, and respond swiftly before issues impact end users.\\
+
+
+In this context, metrics-based monitoring, has become essential for maintaining the health of modern distributed systems.
+This project aims to fill a notable gap in the Kotlin ecosystem by providing a robust and idiomatic Prometheus client library tailored specifically for Kotlin applications.
+Unlike existing libraries that primarily target other JVM languages or lack native support for Kotlin’s coroutine model, this library offers seamless integration and out-of-the-box support for popular Kotlin-only frameworks such as Ktor.
+By delivering a solution designed with Kotlin’s language features and concurrency paradigms in mind, this project enables developers to instrument their applications effectively and embrace modern metrics-based monitoring with minimal friction.
+
+\section{Objectives}\label{sec:objectives}
+
+The primary objective of this project is to develop a Kotlin-native Prometheus client library that addresses existing limitations in the Kotlin ecosystem by providing a robust, idiomatic, and efficient solution for metrics instrumentation and collection.
+
+Specifically, the project aims to:
+
+\begin{itemize}
+    \item Design and implement a client library that fully leverages Kotlin’s coroutine-based concurrency model to enable asynchronous and efficient metric collection.
+    \item Provide seamless integration with popular Kotlin frameworks such as \texttt{Ktor}, ensuring ease of use and
+    compatibility within typical Kotlin application environments.
+    \item Ensure the library is designed with readability and idiomatic Kotlin style in mind, making it intuitive and enjoyable to use.
+    \item Develop an expressive and idiomatic \ac{DSL} for defining and managing metrics,
+    reducing boilerplate code and improving developer productivity.
+    \item Optimize the library for performance and resource efficiency, surpassing existing Java-based Prometheus
+    clients when used in Kotlin applications where possible.
+    \item Support \ac{KMP}, enabling broad platform compatibility and facilitating code reuse across \ac{JVM},
+    Android, and
+    other supported targets.
+\end{itemize}
+
+By achieving these objectives, the project intends to fill a critical gap in Kotlin observability tooling and empower developers to instrument their applications with minimal effort while adhering to modern Kotlin programming paradigms.
+
+\section{Structure of the Report}\label{sec:structure-of-the-report}
+
+This report is organized into eight main chapters, each focusing on a specific aspect of the project:
+
+\begin{itemize}
+    \item \textbf{Chapter 1: Introduction} — Presents the context and motivation behind the project, outlines the objectives, and provides an overview of the report’s structure.
+
+    \item \textbf{Chapter 2: Background and Motivation} — Covers foundational concepts related to observability and Prometheus, reviews existing Prometheus client libraries, and highlights gaps within the Kotlin ecosystem that motivate this work.
+
+    \item \textbf{Chapter 3: Problem Statement and Goals} — Defines the specific limitations identified in current tooling and states the precise goals and scope of the project.
+
+    \item \textbf{Chapter 4: Design and Architecture} — Describes the high-level architectural decisions, focusing on concurrency models, coroutine usage, and the lifecycle of metric registries.
+
+    \item \textbf{Chapter 5: Implementation Details} — Details the concrete implementation of the client library, including metric types, collector logic, and framework integrations such as with Ktor.
+
+    \item \textbf{Chapter 6: Evaluation and Limitations} — Presents the functional validation, performance evaluation, and comparison with other clients, as well as known limitations of the project.
+
+    \item \textbf{Chapter 7: Future Work} — Suggests possible extensions and improvements, including support for additional technologies, enhanced integration with Kotlin frameworks, and automatic JVM metrics collection.
+
+    \item \textbf{Chapter 8: Conclusion} — Summarizes the contributions made by the project, reflects on lessons learned, and offers final remarks.
+\end{itemize}
+
+The report concludes with a list of references and an appendix containing supplementary material.

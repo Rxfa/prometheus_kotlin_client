@@ -27,11 +27,11 @@ public class CollectorRegistry {
     public suspend fun register(collector: Collector) {
         val collectorName = collector.fullName
         mutex.withLock {
-            val addedToRegistry =  collectorNames.add(collectorName)
+            val addedToRegistry = collectorNames.add(collectorName)
             if (!addedToRegistry) {
                 throw IllegalStateException("Collector is already registered: $collectorName")
             }
-           this.collectors += collector
+            this.collectors += collector
         }
     }
 
@@ -45,7 +45,7 @@ public class CollectorRegistry {
     public suspend fun unregister(collector: Collector) {
         val collectorName = collector.fullName
         mutex.withLock {
-            if(this.collectorNames.contains(collectorName)) {
+            if (this.collectorNames.contains(collectorName)) {
                 this.collectors -= collector
             }
             this.collectorNames.remove(collectorName)

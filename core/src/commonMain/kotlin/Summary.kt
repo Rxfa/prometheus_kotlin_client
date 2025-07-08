@@ -1,10 +1,11 @@
 package io.github.rxfa.prometheus.core
 
 import kotlinx.atomicfu.AtomicLong
-import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.updateAndGet
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 
 /**
@@ -17,7 +18,7 @@ import kotlinx.datetime.Clock
  */
 public fun quantile(
     quantile: Double,
-    error: Double = 0.01
+    error: Double = 0.01,
 ): Quantiles.Quantile {
     if (quantile < 0.0 || quantile > 1.0) {
         throw IllegalArgumentException("Quantile " + quantile + " invalid: Expected number between 0.0 and 1.0.")
@@ -34,11 +35,7 @@ public fun quantile(
  * @param quantiles A variable number of [Quantiles.Quantile] instances.
  * @return A [List] containing the provided quantiles.
  */
-public fun quantiles(
-    vararg quantiles: Quantiles.Quantile
-): List<Quantiles.Quantile> {
-    return quantiles.toList()
-}
+public fun quantiles(vararg quantiles: Quantiles.Quantile): List<Quantiles.Quantile> = quantiles.toList()
 
 /**
  * Creates a summary with predefined quantiles.
@@ -55,10 +52,8 @@ public fun summaryQuantiles(
     block: SummaryBuilder.() -> Unit,
     quantiles: List<Quantiles.Quantile>,
     maxAgeSeconds: Long = 60,
-    ageBuckets: Int = 5
-): Summary {
-    return SummaryBuilder(name,false,quantiles,maxAgeSeconds,ageBuckets).apply {block}.build()
-}
+    ageBuckets: Int = 5,
+): Summary = SummaryBuilder(name, false, quantiles, maxAgeSeconds, ageBuckets).apply { block }.build()
 
 /**
  * Creates a summary without predefined quantiles.
@@ -69,10 +64,8 @@ public fun summaryQuantiles(
  */
 public fun summary(
     name: String,
-    block: SummaryBuilder.() -> Unit
-): Summary {
-    return SummaryBuilder(name).apply(block).build()
-}
+    block: SummaryBuilder.() -> Unit,
+): Summary = SummaryBuilder(name).apply(block).build()
 
 /**
  * Represents the current state of a summary, including the count, sum, quantiles, and creation timestamp.
@@ -84,10 +77,9 @@ public fun summary(
  */
 public data class ValueSummary(
     val count: Double,
-    val sum : Double,
-    val quantiles: Map<Double,Double>?,
-    val created: Long
-
+    val sum: Double,
+    val quantiles: Map<Double, Double>?,
+    val created: Long,
 )
 
 /**
@@ -111,30 +103,26 @@ public class Summary internal constructor(
     unit: String = "",
     includeCreatedSeries: Boolean = false,
     private val quantiles: List<Quantiles.Quantile>,
-    private val maxAgeSeconds: Long ,
-    private val ageBuckets: Int
-): SimpleCollector<Summary.Child>(fullName, help, labelNames, unit) {
-
+    private val maxAgeSeconds: Long,
+    private val ageBuckets: Int,
+) : SimpleCollector<Summary.Child>(fullName, help, labelNames, unit) {
     override val suffixes: Set<String> = setOf()
     override val name: String = fullName
     override val type: Type = Type.SUMMARY
 
-    override fun newChild(): Child {
-        return Child(quantiles)
-    }
+    override fun newChild(): Child = Child(quantiles)
 
     /**
      * Makes sure that there ano labels named 'quantile' in the labelNames.
      */
-    init{
+    init {
         for (label in labelNames) {
-            if (label.equals("quantile")) {
+            if (label == "quantile") {
                 throw IllegalStateException("Summary cannot have a label named 'quantile'.")
             }
         }
         initializeNoLabelsChild()
     }
-
 
     /**
      * A utility class for measuring the duration of operations and recording the observed duration
@@ -143,27 +131,18 @@ public class Summary internal constructor(
      * @property child The histogram child instance to record the duration.
      * @property start The start time of the operation in milliseconds.
      */
-    public class Timer{
-
-        private val child: Child
-        private val start: Long
-
+    public class Timer public constructor(
+        private val child: Summary.Child,
+        private val start: Long,
+    ) {
         private val simpleTimer = SimpleTimer()
 
-        public constructor(child: Summary.Child,start: Long) {
-            this.child = child
-            this.start = start
-        }
-
-        public suspend fun observeDuration():Double{
+        public suspend fun observeDuration(): Double {
             val elapsed = simpleTimer.elapsedSecondsFromNanos(start, simpleTimer.defaultTimeProvider.milliTime)
             child.observe(elapsed)
             return elapsed
         }
-
-
     }
-
 
     /**
      * Represents a labeled child of the summary metric.
@@ -172,15 +151,12 @@ public class Summary internal constructor(
      *
      * summary.labels("GET").startTimer().observeDuration()
      */
-    public inner class Child{
+    public inner class Child {
+        public fun startTimer(): Timer = Timer(this, Clock.System.now().toEpochMilliseconds())
 
-        public fun startTimer():Timer{
-            return Timer(this, Clock.System.now().toEpochMilliseconds())
-        }
-
-        public suspend fun time(runnable: Runnable):Double{
+        public suspend fun time(runnable: Runnable): Double {
             val start = startTimer()
-            val final : Double;
+            val final: Double
             try {
                 runnable.run()
             } catch (e: Exception) {
@@ -192,12 +168,14 @@ public class Summary internal constructor(
         }
 
         public constructor(
-            quantiles: List<Quantiles.Quantile>
+            quantiles: List<Quantiles.Quantile>,
         ) {
             this.quantiles = quantiles
-            if(quantiles.isNotEmpty()){
+            if (quantiles.isNotEmpty()) {
                 quantilesValues = TimeWindowQuantiles(quantiles.toTypedArray(), maxAgeSeconds, ageBuckets)
-            }else quantilesValues = null
+            } else {
+                quantilesValues = null
+            }
         }
 
         private val quantiles: List<Quantiles.Quantile>
@@ -206,28 +184,24 @@ public class Summary internal constructor(
         private val count: AtomicLong = atomic(0L)
         private val created: Long = Clock.System.now().toEpochMilliseconds()
 
-
-
         /**
          * Returns the current value of the summary as a [ValueSummary] object.
          *
          * This includes the count, sum, quantiles, and creation timestamp.
          */
-        public fun get():ValueSummary{
+        public fun get(): ValueSummary {
             val map = mutableMapOf<Double, Double>()
-            for(quantile in quantiles){
+            for (quantile in quantiles) {
                 map[quantile.quantile] = quantilesValues?.get(quantile.quantile) ?: 0.0
             }
-
 
             return ValueSummary(
                 count.value.toDouble(),
                 Double.fromBits(sum.value),
                 map,
-                created
-                )
+                created,
+            )
         }
-
 
         /**
          * Observes a value and updates the summary metrics accordingly.
@@ -236,7 +210,7 @@ public class Summary internal constructor(
          * @param value The value to observe. Must be a finite double.
          * @throws IllegalArgumentException if the value is NaN or infinite.
          */
-        public suspend fun observe(value:Double){
+        public suspend fun observe(value: Double) {
             withContext(Dispatchers.Default) {
                 count.getAndIncrement()
                 sum.updateAndGet { currentBits ->
@@ -246,59 +220,55 @@ public class Summary internal constructor(
                 }
                 quantilesValues?.insert(value)
             }
-
         }
-
     }
+
     public suspend fun observe(value: Double) {
         noLabelsChild?.observe(value)
     }
 
-    public suspend fun time(runnable: Runnable): Double {
-        return noLabelsChild?.time(runnable) ?: 0.0
-    }
+    public suspend fun time(runnable: Runnable): Double = noLabelsChild?.time(runnable) ?: 0.0
 
-    public fun get(): ValueSummary {
-        return noLabelsChild?.get() ?: throw IllegalStateException("No labels child is not initialized.")
-    }
-
+    public fun get(): ValueSummary = noLabelsChild?.get() ?: throw IllegalStateException("No labels child is not initialized.")
 
     public override fun collect(): MetricFamilySamples {
         val samples = mutableListOf<Sample>()
         for ((labels, childs) in childMetrics) {
             val value = childs.get()
             val labelNamesWithQuantiles = labelNames + "quantile"
-            if(value.quantiles != null){
-            for (quantile in value.quantiles) {
-                val labelValuesWithQuantiles = labels + quantile.key.toString()
-                samples.add(
-                    Sample(name = fullName + "_quantile",
-                        labelNames = labelNamesWithQuantiles,
-                        labelValues = labelValuesWithQuantiles,
-                        value = quantile.value,
-                        timestamp = value.created
+            if (value.quantiles != null) {
+                for (quantile in value.quantiles) {
+                    val labelValuesWithQuantiles = labels + quantile.key.toString()
+                    samples.add(
+                        Sample(
+                            name = fullName + "_quantile",
+                            labelNames = labelNamesWithQuantiles,
+                            labelValues = labelValuesWithQuantiles,
+                            value = quantile.value,
+                            timestamp = value.created,
+                        ),
                     )
-                )
+                }
             }
-            }
-            samples.add(Sample(name = fullName + "_count",
-                labelNames = labelNames,
-                labelValues = labels,
-                value = value.count,
-                timestamp = value.created
-            ))
-            samples.add(Sample(name = fullName + "_sum",
-                labelNames = labelNames,
-                labelValues = labels,
-                value = value.sum,
-                timestamp = value.created
-            ))
-
+            samples.add(
+                Sample(
+                    name = fullName + "_count",
+                    labelNames = labelNames,
+                    labelValues = labels,
+                    value = value.count,
+                    timestamp = value.created,
+                ),
+            )
+            samples.add(
+                Sample(
+                    name = fullName + "_sum",
+                    labelNames = labelNames,
+                    labelValues = labels,
+                    value = value.sum,
+                    timestamp = value.created,
+                ),
+            )
         }
         return familySamplesList(samples)
     }
-
-
 }
-
-

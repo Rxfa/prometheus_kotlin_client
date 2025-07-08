@@ -1,7 +1,6 @@
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
 import io.github.rxfa.prometheus.core.Counter
 import io.github.rxfa.prometheus.core.PrometheusTextFormat
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -20,15 +19,16 @@ class PrometheusTextFormatTest {
         runTest {
             val counter = Counter("requests", "Total requests")
 
-                counter.inc(10.0)
+            counter.inc(10.0)
 
             val result = prometheusTextFormat.writeMetrics(listOf(counter))
 
-            val expected = """
+            val expected =
+                """
                 # TYPE requests_total counter
                 # HELP requests_total Total requests
                 requests_total{} 10.0
-            """.trimIndent()
+                """.trimIndent()
 
             assertEquals(expected, result.trim())
         }
@@ -42,14 +42,14 @@ class PrometheusTextFormatTest {
 
             counter.labels("GET").inc(100.0)
 
-
             val result = prometheusTextFormat.writeMetrics(listOf(counter))
 
-            val expected = """
-            # TYPE http_requests_total counter
-            # HELP http_requests_total Total HTTP requests
-            http_requests_total{method="GET"} 100.0
-        """.trimIndent()
+            val expected =
+                """
+                # TYPE http_requests_total counter
+                # HELP http_requests_total Total HTTP requests
+                http_requests_total{method="GET"} 100.0
+                """.trimIndent()
 
             assertEquals(expected, result.trim())
         }
@@ -84,16 +84,17 @@ class PrometheusTextFormatTest {
 
             val result = prometheusTextFormat.writeMetrics(listOf(counter1, counter2))
 
-            val expected = """
-            # TYPE http_requests_total counter
-            # HELP http_requests_total Total HTTP requests
-            http_requests_total{method="GET"} 5.0
-            http_requests_total{method="POST"} 3.0
-            
-            # TYPE disk_writes_total counter
-            # HELP disk_writes_total Total disk writes
-            disk_writes_total{} 10240.0
-        """.trimIndent()
+            val expected =
+                """
+                # TYPE http_requests_total counter
+                # HELP http_requests_total Total HTTP requests
+                http_requests_total{method="GET"} 5.0
+                http_requests_total{method="POST"} 3.0
+                
+                # TYPE disk_writes_total counter
+                # HELP disk_writes_total Total disk writes
+                disk_writes_total{} 10240.0
+                """.trimIndent()
 
             assertEquals(expected, result.trim())
         }

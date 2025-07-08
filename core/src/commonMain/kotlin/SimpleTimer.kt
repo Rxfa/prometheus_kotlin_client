@@ -1,18 +1,19 @@
 package io.github.rxfa.prometheus.core
 
 import kotlinx.datetime.Clock
-import kotlin.time.TimeSource
-
 
 public class SimpleTimer {
-    private val start:Long;
-    public val defaultTimeProvider: TimeProvider = TimeProvider();
-    private val timeProvider: TimeProvider ;
+    private val start: Long
+    public val defaultTimeProvider: TimeProvider = TimeProvider()
+    private val timeProvider: TimeProvider
 
-    private val MILLISECONDS_PER_SECOND = 1000.0
+    public companion object {
+        private const val MILLISECONDS_PER_SECOND: Double = 1000.0
+    }
+
     public class TimeProvider {
         private val clock: Clock = Clock.System
-        public val milliTime:Long get() = getCurrentMillis(clock)
+        public val milliTime: Long get() = getCurrentMillis(clock)
     }
 
     public constructor(timeProvider: TimeProvider) {
@@ -28,11 +29,10 @@ public class SimpleTimer {
     /**
      * @return Measured duration in seconds since {@link SimpleTimer} was constructed.
      */
-    public fun elapsedSeconds(): Double {
-        return elapsedSecondsFromNanos(start, timeProvider.milliTime);
-    }
+    public fun elapsedSeconds(): Double = elapsedSecondsFromNanos(start, timeProvider.milliTime)
 
-    public fun elapsedSecondsFromNanos(startNanos: Long, endNanos: Long): Double {
-        return (endNanos - startNanos) / MILLISECONDS_PER_SECOND;
-    }
+    public fun elapsedSecondsFromNanos(
+        startNanos: Long,
+        endNanos: Long,
+    ): Double = (endNanos - startNanos) / MILLISECONDS_PER_SECOND
 }
