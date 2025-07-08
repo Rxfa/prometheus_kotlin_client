@@ -27,6 +27,5 @@ To maintain focus and deliver a stable MVP, certain features and use cases are i
 \begin{itemize}
   \item \textbf{PushGateway integration:} The library will support pull-based scraping only. Push-based metric transport (e.g., batch job metrics) is not addressed.
   \item \textbf{Advanced metric types:} Specialized types like \texttt{info}, \texttt{enum}, or \texttt{state\_set} will not be implemented in the initial version.
-  \item \textbf{Built-in HTTP server:} The client will not expose its own HTTP endpoint; instead, it will provide raw formatted output to be integrated with external frameworks like Ktor.
   \item \textbf{JVM internals instrumentation:} Metrics related to garbage collection, memory pools, or thread activity are considered outside the scope of this project.
 \end{itemize}

@@ -7,6 +7,12 @@ defining, collecting, and exporting application metrics in a manner compliant wi
 Its design supports all core Prometheus metric types—namely, counters, gauges, histograms, and summaries—enabling
 accurate instrumentation of application behavior and performance across diverse runtime environments such as \ac{JVM} and native platforms.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth, keepaspectratio]{./figures/core_arch}
+    \caption{Core Architecture}
+\end{figure}
+
 Central to the architecture is the \texttt{CollectorRegistry}, a thread-safe, platform-agnostic component responsible for managing metric collectors and aggregating their samples.
 This registry acts as the single source of truth for all registered metrics and ensures that metric collection can occur concurrently without data races or inconsistencies.
 
@@ -57,15 +63,16 @@ This flexibility ensures that the library remains lightweight, portable, and eas
 
 \section{Module Structure}\label{sec:module-structure}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth, keepaspectratio]{./figures/module_dependencies}
+    \caption{Module Dependencies}
+\end{figure}
+
 The Prometheus client library is organized into a modular architecture to ensure clean separation of concerns, platform flexibility, and ease of use across different application environments.
 Each module encapsulates a specific layer of functionality, ranging from the core metric definitions to optional platform-specific integrations for HTTP exposition.
 The current structure consists of the following modules:
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.75\linewidth, keepaspectratio]{./figures/module_dependencies.png}
-    \caption{Module Dependencies}
-\end{figure}
 
 \begin{itemize}
     \item \textbf{core} --- A \ac{KMP} module containing the core logic of the Prometheus client library.
@@ -101,11 +108,12 @@ The metric model of the Prometheus Kotlin client library provides abstractions f
 
 \subsection{Metric Types Overview}\label{subsec:metric-types-overview}
 
-\begin{figure}[h]
+\begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth, keepaspectratio]{./figures/metric_types}
     \caption{Metric Types}
 \end{figure}
+
 
 \begin{itemize}
     \item \textbf{Counter:} Represents a cumulative metric that only increases, typically used to count discrete events such as requests, errors, or tasks completed.
