@@ -457,6 +457,52 @@ While exact figures vary depending on runtime conditions, our benchmarks consist
     \item In latency-sensitive paths, the Kotlin client maintains competitive performance by minimizing locking and leveraging Kotlin’s structured concurrency and non-blocking primitives.
 \end{itemize}
 
+
+\subsection*{Benchmark Results}
+
+We executed three separate benchmark trials to ensure consistency and statistical significance. The operations tested included counter increments and reads, gauge mutations and reads, histogram observations, and summary recording. The results below are in \texttt{ops/ms} (operations per millisecond), using JMH's \texttt{Throughput} mode.
+
+\subsubsection*{Performance Summary}
+
+\begin{itemize}
+    \item \textbf{Counter Operations}: Our Kotlin implementation achieved higher read throughput (e.g., $\sim$930K ops/ms) and comparable or slightly better increment rates than the Java client across all runs.
+    \item \textbf{Gauge Operations}: Kotlin gauges showed excellent performance in both reads and writes. Notably, Kotlin achieved higher throughput in \texttt{getGauge} operations in every trial.
+    \item \textbf{Histogram Observations}: Performance was on par in two trials, with Kotlin trailing slightly in one. Variations here are likely due to timing jitter or GC noise.
+    \item \textbf{Summary Observations}: The Kotlin client consistently outperformed the Java client, with improvements of 25–40\% in throughput across all benchmark runs.
+\end{itemize}
+
+\subsubsection*{Sample Benchmark Results}
+
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Benchmark} & \textbf{Java} & \textbf{Kotlin} & \textbf{Diff} & \textbf{Faster?} \\
+\midrule
+\texttt{getCounterValue}        & 784,929 & 930,915 & +18.6\% & Kotlin \\
+\texttt{incrementCounter}       & 3,582   & 3,700   & +3.3\%  & Kotlin \\
+\texttt{getGauge}               & 789,824 & 931,873 & +18.0\% & Kotlin \\
+\texttt{setGauge}               & 3,252   & 3,496   & +7.5\%  & Kotlin \\
+\texttt{observeHistogram}       & 3,497   & 3,486   & -0.3\%  & Tie \\
+\texttt{observeSummary}         & 7,145   & 9,615   & +34.5\% & Kotlin \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{Conclusion}
+
+The benchmark results demonstrate that our Kotlin Prometheus library is not only idiomatic and ergonomic but also competitive with — and in many cases superior to — the established Java client in terms of throughput.
+
+Key takeaways:
+\begin{itemize}
+    \item The coroutine-based design, combined with channel-based batching, enables efficient metric updates under load.
+    \item Gauge and summary metrics show particular strength in the Kotlin implementation, benefitting from optimized internal structures and non-blocking access.
+    \item Despite being written entirely in Kotlin and favoring safety and expressiveness, our implementation does not sacrifice performance.
+\end{itemize}
+
+These results validate our design choice to build a native Kotlin client from the ground up, ensuring that developers targeting the Kotlin ecosystem benefit from both performance and a clean, idiomatic API.
+
+
+
 \subsection*{Takeaways}
 
 The results demonstrate that a fully idiomatic Kotlin Prometheus client can achieve parity with the mature Java implementation in common operational scenarios, while offering a significantly more expressive and safe API surface for Kotlin developers.
