@@ -81,7 +81,7 @@ private var value = atomic(0.0.toRawBits())
 Since there are multiple different uses for counters, we could optimise it for other uses.
 
 For example:
-In cases where most of the increments would be only 1
+In cases where most of the increments would be only 1.
 We could use two instances, one for \texttt{AtomicLong} and another one for the Double representation in rawbits \texttt{AtomicLong('Double in RawBits')} for the increments.
 
 
@@ -111,8 +111,7 @@ All increment operations are performed within the \texttt{Dispatchers.Default} c
 
 We opted out of using \texttt{Dispatchers.IO} or \texttt{Dispatchers.Unconfined} to avoid potential performance bottlenecks and ensure that counter updates are handled efficiently in a thread-safe manner.
 
-Based on the nature of the counter it only made sense to make it available in the \texttt{Default} dispatcher, which is optimized for CPU-bound tasks. This choice aligns with the typical use cases of counters, such as counting requests or events, which are often CPU-intensive operations.
-
+Based on the nature of the counter it only made sense to make it available in the \texttt{Default} dispatcher, which is optimized for CPU-bound tasks. 
 %Label Handling and Sample Collection
 
 \subsection{Label Handling and Sample Collection}
@@ -188,8 +187,9 @@ Similar to the counter, the gauge uses the \texttt{kotlinx.atomicfu} library for
 private var value = atomic(0.0.toRawBits())
 \end{verbatim}
 
-All value updates (e.g., \texttt{inc()}, \texttt{dec()}, \texttt{set()}) operate via atomic \texttt{updateAndGet()} transformations to ensure correctness and eliminate the need for locks:
+All value updates (e.g., \texttt{inc()}, \texttt{dec()}, \texttt{set()}) operate via atomic \texttt{updateAndGet()} transformations to ensure correctness and eliminate the need for locks.
 
+We use this approach to update the values in the fucntions metioned before:
 \begin{verbatim}
 value.updateAndGet { currentBits ->
     val current = Double.fromBits(currentBits)
@@ -767,40 +767,3 @@ Each metric type has a corresponding builder class extending \texttt{MetricBuild
 
 Each builder encapsulates not only the construction of a collector but also the logic and validation required for metric compliance. This promotes clear separation between metric definition and usage, while enabling expressive and ergonomic integration in Kotlin applications.
 
-
-\section{Ktor Integration}
-
-To demonstrate the flexibility and extensibility of the Kotlin Prometheus client, a dedicated integration module was developed for the \texttt{Ktor} server framework. This integration allows seamless instrumentation of HTTP metrics and provides a standardized endpoint for Prometheus scraping.
-
-\subsection*{Instrumentation Overview}
-The integration exposes a function \texttt{installPrometheusMetrics}, which registers the relevant collectors to a provided \texttt{CollectorRegistry} (defaulting to a new one) and wires up Ktor's \texttt{ApplicationCallPipeline} and \texttt{StatusPages} to intercept and record:
-
-\begin{itemize}
-  \item Total HTTP requests (\texttt{http\_requests\_total}), labeled by method and normalized path.
-  \item Total HTTP error responses (\texttt{http\_requests\_errors\_total}), labeled by method, path, and status code.
-  \item Total exceptions during request handling (\texttt{http\_exceptions\_total}), labeled by method, path, and exception type.
-  \item Duration of requests captured through histogram (\texttt{http\_request\_duration\_seconds\_histogram}), summary, and custom bucket metrics.
-  \item Current number of users via a gauge (\texttt{http\_current\_users}).
-\end{itemize}
-
-Each metric includes label-based differentiation to allow fine-grained analysis of system behavior and performance.
-
-\subsection*{Metrics Endpoint Exposure}
-The integration also offers optional HTTP endpoint exposure via a configurable path (defaulting to \texttt{/metrics}). When enabled, this endpoint responds with metrics encoded in the OpenMetrics text exposition format. The developer can optionally include timestamps in the output by adjusting the integration configuration.
-
-\subsection*{Traffic Simulation and Example Application}
-An example Ktor application demonstrates practical usage of the metrics system. It defines various endpoints (e.g., \texttt{/}, \texttt{/search}, \texttt{/orders}) and simulates randomized traffic and error conditions to showcase the client's observability capabilities. The application uses Ktor's lifecycle hooks to launch a coroutine that generates synthetic HTTP requests at runtime, mimicking realistic load patterns. Errors and exceptions are injected stochastically to validate metrics tracking under adverse conditions.
-
-\subsection*{Normalization Strategy}
-To prevent label cardinality explosion, the integration applies path normalization using regular expressions. Numeric segments and UUIDs are replaced with a placeholder (\texttt{\{param\}}), ensuring consistent labeling for variable endpoints such as \texttt{/users/1234} or \texttt{/orders/uuid}.
-
-\subsection*{Benefits}
-This integration highlights the following benefits:
-\begin{itemize}
-  \item Minimal developer effort to enable metrics.
-  \item Full coroutine support and non-blocking observation.
-  \item Realistic and structured observability of HTTP applications.
-  \item Alignment with Prometheus best practices for metric naming and label usage.
-\end{itemize}
-
-Future enhancements may include push gateway integration or dynamic configuration via a DSL to extend support for additional deployment models.

@@ -147,6 +147,8 @@ It supports labeled child instances to track counts across different dimensions 
 
 Example usage:
 
+\noindent\rule{\linewidth}{0.4pt}
+
 \begin{lstlisting}
 val errors = counter("errors_total") {
     help("Total number of errors")
@@ -156,6 +158,8 @@ val errors = counter("errors_total") {
 errors.labels("database").inc()
 errors.labels("network").inc(2.0)
 \end{lstlisting}
+
+\noindent\rule{\linewidth}{0.4pt}
 
 \paragraph{Gauge}
 
@@ -173,6 +177,8 @@ A \texttt{Gauge} represents a value that can go up and down, allowing tracking o
 
 Example usage:
 
+\noindent\rule{\linewidth}{0.4pt}
+
 \begin{lstlisting}
 val memoryUsage = gauge("memory_usage_bytes") {
     help("Current memory usage in bytes")
@@ -182,6 +188,9 @@ memoryUsage.set(150_000_000)
 memoryUsage.inc(1024)
 memoryUsage.dec(512)
 \end{lstlisting}
+
+\noindent\rule{\linewidth}{0.4pt}
+
 
 \paragraph{Histogram}
 
@@ -196,6 +205,8 @@ Histograms automatically count the number of observations and maintain a sum of 
 
 Example usage:
 
+\noindent\rule{\linewidth}{0.4pt}
+
 \begin{lstlisting}
 val requestLatency = histogram("http_request_duration_seconds") {
     help("HTTP request latency in seconds")
@@ -205,6 +216,9 @@ val requestLatency = histogram("http_request_duration_seconds") {
 requestLatency.observe(0.42)
 requestLatency.observe(1.2)
 \end{lstlisting}
+
+\noindent\rule{\linewidth}{0.4pt}
+
 
 \paragraph{Summary}
 
@@ -217,6 +231,8 @@ A \texttt{Summary} provides streaming quantile estimation, which is useful to ca
 
 Example usage:
 
+\noindent\rule{\linewidth}{0.4pt}
+
 \begin{lstlisting}
 val responseSizes = summary("http_response_size_bytes") {
     help("HTTP response sizes in bytes")
@@ -225,6 +241,9 @@ val responseSizes = summary("http_response_size_bytes") {
 responseSizes.observe(512)
 responseSizes.observe(1024)
 \end{lstlisting}
+
+\noindent\rule{\linewidth}{0.4pt}
+
 
 This metric model provides a consistent and extensible foundation for instrumenting Kotlin applications in a way that aligns with Prometheus best practices.
 By leveraging labeled child instances via the inherited \texttt{labels()} method and exposing idiomatic APIs for incrementing, setting, or observing values, the library enables rich and precise metric collection.
@@ -239,6 +258,8 @@ builder pattern behind expressive Kotlin lambda syntax.
 
 For instance, the \texttt{counter} function allows users to define and register a counter metric in a clear and declarative way:
 
+\noindent\rule{\linewidth}{0.4pt}
+
 \begin{figure}[h]
     \begin{lstlisting}
 val requests = counter("http_requests_total") {
@@ -249,6 +270,8 @@ val requests = counter("http_requests_total") {
     \end{lstlisting}
     \caption{Counter definition - Prometheus Kotlin library}
 \end{figure}
+
+\noindent\rule{\linewidth}{0.4pt}
 
 This approach provides several benefits:
 
@@ -266,6 +289,8 @@ builders or configuration objects.
 For example, a counter metric might be defined as:
 
 
+\noindent\rule{\linewidth}{0.4pt}
+
 \begin{figure}[h]
     \begin{lstlisting}
 Counter.Builder builder = Counter.build()
@@ -276,10 +301,16 @@ Counter.Builder builder = Counter.build()
     \caption{Counter definition - Prometheus Java library}
 \end{figure}
 
+\noindent\rule{\linewidth}{0.4pt}
+
+
 This comparison highlights how Kotlin’s language features enable a more elegant and developer-friendly \ac{API}
 surface, promoting better usability and reducing common errors.
 
 Similarly, other metric types such as gauges are created using analogous \ac{DSL} functions:
+
+
+\noindent\rule{\linewidth}{0.4pt}
 
 \begin{figure}[h]
     \begin{lstlisting}
@@ -291,6 +322,9 @@ val memoryUsage = gauge("memory_usage_bytes") {
     \end{lstlisting}
     \caption{Gauge definition - Prometheus Kotlin library}
 \end{figure}
+
+\noindent\rule{\linewidth}{0.4pt}
+
 
 Overall, this layered design—with internal builder classes and external \ac{DSL} functions—provides a clear separation
 of concerns between metric construction and user interaction, enhancing modularity and maintainability while embracing Kotlin idioms for a modern instrumentation library.
@@ -312,6 +346,9 @@ This follows the standard model proposed by Prometheus, where collectors (such a
 The registry is designed to be thread-safe and coroutine-friendly, ensuring safe access from concurrent environments.
 Its most common usage is as a backend for metric exposition, such as via \texttt{PrometheusExporter}.
 
+\noindent\rule{\linewidth}{0.4pt}
+
+
 \begin{figure}[h]
     \begin{lstlisting}
 val registry = CollectorRegistry.defaultRegistry
@@ -321,7 +358,13 @@ val samples = registry.collect()
     \caption{Collector registration and sample collection}
 \end{figure}
 
+\noindent\rule{\linewidth}{0.4pt}
+
+
 Although applications typically rely on the singleton \texttt{defaultRegistry}, custom registries can be created as needed. This is useful for testing, modular system design, or scenarios requiring metric isolation (e.g., multi-tenant services).
+
+\noindent\rule{\linewidth}{0.4pt}
+
 
 \begin{figure}[h]
     \begin{lstlisting}
@@ -332,6 +375,8 @@ CollectorRegistry.defaultRegistry.register(myCounter)
     \end{lstlisting}
     \caption{Using the default registry for registration}
 \end{figure}
+
+\noindent\rule{\linewidth}{0.4pt}
 
 
 \section{Exposition}\label{sec:exposition}
@@ -428,83 +473,3 @@ The responsibilities are well-separated:
 
 This modular approach ensures that the exposition logic can be reused across different backends and integrated into various HTTP frameworks without duplicating formatting logic.
 
-
-\section{Benchmarks}
-
-To validate the performance and runtime characteristics of our Kotlin-native Prometheus library, we conducted comparative benchmarks against the official Java Prometheus client. These benchmarks were designed to simulate real-world usage patterns involving high-throughput counter operations, as these are among the most common metrics in production systems.
-
-To simulate asynchronous environments, both clients used a shared \texttt{Channel<Unit>} that dispatches increment signals to a coroutine-based background consumer. This setup closely mirrors usage in high-concurrency environments like HTTP servers or job schedulers.
-
-\subsection*{Benchmark Configuration}
-\begin{itemize}
-    \item \textbf{Scope}: \texttt{Thread} (isolated state per thread)
-    \item \textbf{Benchmark Mode}: \texttt{Throughput}
-    \item \textbf{Time Unit}: \texttt{Milliseconds}
-    \item \textbf{Channel Buffer}: Size 1024 with \texttt{BufferOverflow.DROP\_OLDEST}
-\end{itemize}
-
-\subsection*{Client Implementations}
-
-\textbf{Java Client}: Used the official Prometheus Java library (\texttt{io.prometheus.client.Counter}). Metrics were created and registered globally with a background coroutine processing increment requests.
-
-\textbf{Kotlin Client}: Used our own DSL-based Kotlin implementation (\texttt{io.github.rxfa.prometheus.core.Counter}). The setup mirrors the Java version, including coroutine usage and buffering strategy.
-
-\subsection*{Results Overview}
-
-While exact figures vary depending on runtime conditions, our benchmarks consistently show that:
-\begin{itemize}
-    \item The Kotlin client offers comparable throughput for each operation, with minimal performance overhead despite its idiomatic and coroutine-centric architecture.
-    \item In latency-sensitive paths, the Kotlin client maintains competitive performance by minimizing locking and leveraging Kotlin’s structured concurrency and non-blocking primitives.
-\end{itemize}
-
-
-\subsection*{Benchmark Results}
-
-We executed three separate benchmark trials to ensure consistency and statistical significance. The operations tested included counter increments and reads, gauge mutations and reads, histogram observations, and summary recording. The results below are in \texttt{ops/ms} (operations per millisecond), using JMH's \texttt{Throughput} mode.
-
-\subsubsection*{Performance Summary}
-
-\begin{itemize}
-    \item \textbf{Counter Operations}: Our Kotlin implementation achieved higher read throughput (e.g., $\sim$930K ops/ms) and comparable or slightly better increment rates than the Java client across all runs.
-    \item \textbf{Gauge Operations}: Kotlin gauges showed excellent performance in both reads and writes. Notably, Kotlin achieved higher throughput in \texttt{getGauge} operations in every trial.
-    \item \textbf{Histogram Observations}: Performance was on par in two trials, with Kotlin trailing slightly in one. Variations here are likely due to timing jitter or GC noise.
-    \item \textbf{Summary Observations}: The Kotlin client consistently outperformed the Java client, with improvements of 25–40\% in throughput across all benchmark runs.
-\end{itemize}
-
-\subsubsection*{Sample Benchmark Results}
-
-\begin{center}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Benchmark} & \textbf{Java} & \textbf{Kotlin} & \textbf{Diff} & \textbf{Faster?} \\
-\midrule
-\texttt{getCounterValue}        & 784,929 & 930,915 & +18.6\% & Kotlin \\
-\texttt{incrementCounter}       & 3,582   & 3,700   & +3.3\%  & Kotlin \\
-\texttt{getGauge}               & 789,824 & 931,873 & +18.0\% & Kotlin \\
-\texttt{setGauge}               & 3,252   & 3,496   & +7.5\%  & Kotlin \\
-\texttt{observeHistogram}       & 3,497   & 3,486   & -0.3\%  & Tie \\
-\texttt{observeSummary}         & 7,145   & 9,615   & +34.5\% & Kotlin \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\subsubsection*{Conclusion}
-
-The benchmark results demonstrate that our Kotlin Prometheus library is not only idiomatic and ergonomic but also competitive with — and in many cases superior to — the established Java client in terms of throughput.
-
-Key takeaways:
-\begin{itemize}
-    \item The coroutine-based design, combined with channel-based batching, enables efficient metric updates under load.
-    \item Gauge and summary metrics show particular strength in the Kotlin implementation, benefitting from optimized internal structures and non-blocking access.
-    \item Despite being written entirely in Kotlin and favoring safety and expressiveness, our implementation does not sacrifice performance.
-\end{itemize}
-
-These results validate our design choice to build a native Kotlin client from the ground up, ensuring that developers targeting the Kotlin ecosystem benefit from both performance and a clean, idiomatic API.
-
-
-
-\subsection*{Takeaways}
-
-The results demonstrate that a fully idiomatic Kotlin Prometheus client can achieve parity with the mature Java implementation in common operational scenarios, while offering a significantly more expressive and safe API surface for Kotlin developers.
-
-This validates our architectural decisions around coroutine integration, label-safe design, and type-safe builders, and provides confidence that our library is suitable for production monitoring workloads in modern Kotlin services.

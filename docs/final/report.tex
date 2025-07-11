@@ -13,9 +13,32 @@
 \usepackage{algpseudocode}
 \usepackage[printonlyused]{acronym}
 \usepackage{listings}
-\usepackage{hyperref}
 \usepackage{tikz}
 \usepackage{booktabs}
+\usepackage{tcolorbox}
+\tcbuselibrary{listings, breakable}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[colorlinks=true, urlcolor=blue]{hyperref} % for clickable links
+
+
+% Define Kotlin language for listings
+\lstdefinelanguage{Kotlin}{
+  morekeywords={fun, val, var, if, else, when, return, null, true, false},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]"
+}
+\lstdefinestyle{kotlinstyle}{
+  language=Kotlin,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{red},
+  showstringspaces=false,
+  columns=fullflexible
+}
 
 \usetikzlibrary{arrows.meta}
 \renewcommand{\algorithmicrequire}{\textbf{Dados: }}
@@ -144,25 +167,22 @@
     \include{background}
 
 % Chapter 3
-    \include{problem}
-
-% Chapter 4
     \include{architecture}
 
-% Chapter 5
+% Chapter 4
     \include{implementation}
 
-% Chapter 6
+% Chapter 5
     \include{evaluation}
 
-% Chapter 7
+% Chapter 6
     \include{future}
 
-% Chapter 8
+% Chapter 7
     \include{conclusion}
 
 % References
-    \bibliographystyle{plain}
+    \bibliographystyle{plainurl}
     \bibliography{refs}
     \addcontentsline{toc}{chapter}{References}
 

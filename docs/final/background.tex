@@ -170,12 +170,6 @@ Metric labels must comply with the following rules:
 \end{itemize}
 
 
-\medskip
-\noindent
-\textbf{NOTE:} Colons (\texttt{:}) in for both label and metric names regex are reserved for user-defined recording
-rules.
-They shouldn't be used by exporters or direct instrumentation.
-
 Time series are identified using the following notation:
 \begin{figure}[h]
     \centering
@@ -261,3 +255,34 @@ Recognizing these challenges, the Prometheus project encourages the development 
 It provides clear guidelines on best practices and pitfalls to avoid when creating such libraries, helping ensure consistency and quality across implementations.
 Moreover, Prometheus maintains an active mailing list where developers can seek clarification and feedback directly from core Prometheus maintainers.
 This open line of communication supports community-driven efforts to fill observability gaps in ecosystems like Kotlin, fostering better integration and more idiomatic instrumentation libraries.
+
+
+\section{Identified Limitations}
+
+While Prometheus has become the de facto standard for metrics-based observability in cloud-native systems, its official client libraries are largely written in imperative languages such as Go, Java, and Python. These implementations do not align well with Kotlin’s idiomatic programming model, particularly regarding coroutine support, functional DSLs, and thread-safety via structured concurrency.
+
+The official Java Prometheus client, while usable in Kotlin projects, exposes a verbose and boilerplate-heavy API. Furthermore, it does not integrate naturally with Kotlin coroutines, leading to potential blocking behavior or unsafe metric updates when used improperly in suspendable contexts.
+
+Additionally, Kotlin developers lack a native library that fully embraces Kotlin-specific features like extension functions, scope builders, and coroutine-friendly primitives for metrics definition and recording. This mismatch creates friction when building observability into modern reactive applications using frameworks such as Ktor or Spring WebFlux.
+
+\section{Project Goals}
+
+This project aims to develop a lightweight, idiomatic Prometheus client library written in Kotlin. The primary goals are:
+
+\begin{itemize}
+  \item \textbf{Kotlin-first design:} Create a metrics API that aligns with Kotlin’s language features, using builder functions, lambdas, and extension patterns to reduce boilerplate and improve readability.
+  \item \textbf{Coroutine safety:} Ensure that metric operations can be safely invoked from within suspending functions and concurrent coroutines, without introducing race conditions or blocking behavior.
+  \item \textbf{OpenMetrics compatibility:} Conform to the OpenMetrics exposition format, ensuring compatibility with Prometheus scraping, tooling, and external monitoring pipelines.
+  \item \textbf{Core metric support:} Implement the most commonly used metric types—\texttt{counter}, \texttt{gauge}, \texttt{histogram}, and \texttt{summary}—with support for labeling, concurrency, and serialization.
+  \item \textbf{Extensibility:} Provide a modular and extensible architecture, allowing future features such as HTTP exposition, JVM metrics integration, or PushGateway support to be added incrementally.
+\end{itemize}
+
+\section{Out of Scope}
+
+To maintain focus and deliver a stable MVP, certain features and use cases are intentionally excluded from this project:
+
+\begin{itemize}
+  \item \textbf{PushGateway integration:} The library will support pull-based scraping only. Push-based metric transport (e.g., batch job metrics) is not addressed.
+  \item \textbf{Advanced metric types:} Specialized types like \texttt{info}, \texttt{enum}, or \texttt{state\_set} will not be implemented in the initial version.
+  \item \textbf{JVM internals instrumentation:} Metrics related to garbage collection, memory pools, or thread activity are considered outside the scope of this project.
+\end{itemize}
