@@ -1,9 +1,8 @@
 plugins {
     kotlin("jvm")
+    id("java-library")
+    alias(libs.plugins.vanniktech.mavenPublish)
 }
-
-group = "io.github.rxfa"
-version = "1.0.0"
 
 repositories {
     mavenCentral()
@@ -25,4 +24,13 @@ dependencies {
 
 kotlin {
     jvmToolchain(21)
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven-ktor") {
+            artifactId = "prometheus-ktor"
+            from(components["java"])
+        }
+    }
 }
