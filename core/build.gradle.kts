@@ -1,4 +1,3 @@
-import com.vanniktech.maven.publish.SonatypeHost
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -6,9 +5,6 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.vanniktech.mavenPublish)
 }
-
-group = "io.github.rxfa"
-version = "1.0.0"
 
 kotlin {
     explicitApi()
@@ -47,45 +43,27 @@ kotlin {
 
 android {
     namespace = "org.jetbrains.kotlinx.multiplatform.library.template"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdk =
+        libs.versions.android.compileSdk
+            .get()
+            .toInt()
     defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
+        minSdk =
+            libs.versions.android.minSdk
+                .get()
+                .toInt()
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
 }
-mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
 
-    signAllPublications()
-
-    coordinates(group.toString(), "core", version.toString())
-
-    pom {
-        name = "Prometheus Kotlin client"
-        description = "Prometheus client library written in Kotlin"
-        inceptionYear = "2025"
-        url = "https://github.com/Rxfa/prometheus_kotlin_client/"
-        licenses {
-            license {
-                name = "XXX"
-                url = "YYY"
-                distribution = "ZZZ"
-            }
-        }
-        developers {
-            developer {
-                id = "XXX"
-                name = "YYY"
-                url = "ZZZ"
-            }
-        }
-        scm {
-            url = "XXX"
-            connection = "YYY"
-            developerConnection = "ZZZ"
+publishing {
+    publications {
+        create<MavenPublication>("maven-core") {
+            artifactId = "prometheus-core"
+            from(components["kotlin"])
         }
     }
 }
