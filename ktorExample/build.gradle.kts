@@ -3,9 +3,6 @@ plugins {
     id("io.ktor.plugin") version "3.1.3"
 }
 
-group = "io.github.rxfa"
-version = "0.0.1"
-
 application {
     mainClass = "io.ktor.server.netty.EngineMain"
 }

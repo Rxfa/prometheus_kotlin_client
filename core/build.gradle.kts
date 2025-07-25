@@ -3,8 +3,11 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
-    alias(libs.plugins.vanniktech.mavenPublish)
+    id("com.vanniktech.maven.publish") version "0.34.0"
 }
+
+group = "io.github.rxfa"
+version = "0.0.1"
 
 kotlin {
     explicitApi()
@@ -59,11 +62,41 @@ android {
     }
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("maven-core") {
-            artifactId = "prometheus-core"
-            from(components["kotlin"])
+mavenPublishing {
+    publishToMavenCentral()
+
+    signAllPublications()
+
+    coordinates(group.toString(), "prometheus-core", version.toString())
+
+    pom {
+        name = "Prometheus Core"
+        description = "Core Prometheus metrics collection logic."
+        inceptionYear = "2025"
+        url = "https://github.com/Rxfa/prometheus_kotlin_client/"
+        licenses {
+            license {
+                name = "The Apache License, Version 2.0"
+                url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                distribution = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+            }
+        }
+        developers {
+            developer {
+                id = "Rxfa"
+                name = "Rafael Nicolau"
+                url = "https://github.com/Rxfa"
+            }
+            developer {
+                id = "MarioRJ16"
+                name = "Mário Carvalho"
+                url = "https://github.com/marioRj16/"
+            }
+        }
+        scm {
+            url = "https://github.com/Rxfa/prometheus_kotlin_client"
+            connection = "scm:git:git://github.com/Rxfa/prometheus_kotlin_client.git"
+            developerConnection = "scm:git:ssh://git@github.com/Rxfa/prometheus_kotlin_client.git"
         }
     }
 }
