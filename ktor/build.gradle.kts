@@ -1,8 +1,10 @@
 plugins {
     kotlin("jvm")
-    id("java-library")
-    alias(libs.plugins.vanniktech.mavenPublish)
+    id("com.vanniktech.maven.publish") version "0.34.0"
 }
+
+group = "io.github.rxfa"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
@@ -26,11 +28,41 @@ kotlin {
     jvmToolchain(21)
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("maven-ktor") {
-            artifactId = "prometheus-ktor"
-            from(components["java"])
+mavenPublishing {
+    publishToMavenCentral()
+
+    signAllPublications()
+
+    coordinates(group.toString(), "prometheus-ktor", version.toString())
+
+    pom {
+        name = "Prometheus Ktor"
+        description = "Ktor integration for Prometheus metrics."
+        inceptionYear = "2025"
+        url = "https://github.com/Rxfa/prometheus_kotlin_client/"
+        licenses {
+            license {
+                name = "The Apache License, Version 2.0"
+                url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                distribution = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+            }
+        }
+        developers {
+            developer {
+                id = "Rxfa"
+                name = "Rafael Nicolau"
+                url = "https://github.com/Rxfa"
+            }
+            developer {
+                id = "MarioRJ16"
+                name = "Mário Carvalho"
+                url = "https://github.com/marioRj16/"
+            }
+        }
+        scm {
+            url = "https://github.com/Rxfa/prometheus_kotlin_client"
+            connection = "scm:git:git://github.com/Rxfa/prometheus_kotlin_client.git"
+            developerConnection = "scm:git:ssh://git@github.com/Rxfa/prometheus_kotlin_client.git"
         }
     }
 }
